@@ -1,54 +1,54 @@
-# Claude Code Project Guide
+# Claude Code 项目指南
 
-## Project Structure
+## 项目结构
 
 ```
-src/                    Extension Host (TypeScript + Node.js)
-  ├── extension.ts        Entry point, command registration & MessageRouter handlers
-  ├── git/                Git CLI wrappers (gitService, graphLayout, types)
-  ├── messages/           Communication protocol (protocol, messageRouter)
-  └── views/              Webview managers (mergeEditorManager, conflictsManager, diffEditorManager, html)
-webview/                Webview Frontend (React 19 + Vite)
+src/                    扩展主机 (TypeScript + Node.js)
+  ├── extension.ts        入口文件，命令注册 & MessageRouter 处理器
+  ├── git/                Git CLI 封装 (gitService, graphLayout, types)
+  ├── messages/           通信协议 (protocol, messageRouter)
+  └── views/              Webview 管理器 (mergeEditorManager, conflictsManager, diffEditorManager, html)
+webview/                Webview 前端 (React 19 + Vite)
   └── src/
-      ├── panel/          Git Log panel (Graph, CommitList, BranchTree, DetailPanel)
-      ├── conflicts/      Conflict list page + 3-Way Merge Editor
-      ├── shared/         Shared modules (bridge, store, hooks, components, theme)
-      └── main.tsx        Router entry (mode: panel | merge | conflicts)
+      ├── panel/          Git Log 面板 (Graph, CommitList, BranchTree, DetailPanel)
+      ├── conflicts/      冲突列表页 + 三方合并编辑器
+      ├── shared/         共享模块 (bridge, store, hooks, components, theme)
+      └── main.tsx        路由入口 (模式: panel | merge | conflicts)
 ```
 
-## Code Conventions
+## 代码规范
 
-### Formatting & Linting
+### 格式化与 Lint
 
-- Formatter & linter: `biome check` (config in biome.json)
-- Must pass `pnpm run compile` (check-types + lint + esbuild) before publishing
+- 格式化/Lint 工具：`biome check`（配置见 biome.json）
+- 发布前必须通过 `pnpm run compile`（check-types + lint + esbuild）
 
-### Tech Stack
+### 技术栈
 
-- **Extension Host**: TypeScript, Node.js, child_process (execFile), esbuild
-- **Webview**: React 19, Zustand, allotment, @tanstack/react-virtual, shiki, diff, node-diff3
-- **Communication**: postMessage request-response + event broadcast (MessageRouter)
-- **Graph Rendering**: SVG + DOM (not Canvas)
-- **Package Manager**: pnpm (monorepo, pnpm-workspace.yaml)
+- **扩展主机**：TypeScript, Node.js, child_process (execFile), esbuild
+- **Webview**：React 19, Zustand, allotment, @tanstack/react-virtual, shiki, diff, node-diff3
+- **通信方式**：postMessage 请求-响应 + 事件广播 (MessageRouter)
+- **图形渲染**：SVG + DOM（非 Canvas）
+- **包管理器**：pnpm（monorepo，pnpm-workspace.yaml）
 
-### Key Design Decisions
+### 关键设计决策
 
-- Direct Git CLI calls (no simple-git), custom `\x00` delimiter parsing
-- Self-implemented graph layout algorithm (greedy lane allocation + LaneSnapshot)
-- 3-way merge via node-diff3, 2-way diff via diff library
-- Single MessageRouter architecture shared by all Webviews
-- Bridge protocol maintained in sync across `webview/src/shared/bridge/types.ts` and `src/messages/protocol.ts`
+- 直接调用 Git CLI（不使用 simple-git），自定义 `\x00` 分隔符解析
+- 自研图形布局算法（贪心车道分配 + LaneSnapshot）
+- 三方合并使用 node-diff3，二方 diff 使用 diff 库
+- 所有 Webview 共用单一 MessageRouter 架构
+- Bridge 协议需在 `webview/src/shared/bridge/types.ts` 与 `src/messages/protocol.ts` 之间保持同步
 
-### Version Pinning
+### 版本锁定
 
-- Do not upgrade React or Vite versions proactively
+- 不要主动升级 React 或 Vite 版本
 
-## Build Commands
+## 构建命令
 
 ```bash
-pnpm run compile          # Extension: check-types + lint + esbuild
-pnpm run build:web        # Webview: tsc + vite build
-pnpm run build            # Both of the above
-pnpm run watch            # Dev mode (esbuild + tsc + vite parallel watch)
-pnpm run package          # Production build (for vsce publish)
+pnpm run compile          # 扩展：check-types + lint + esbuild
+pnpm run build:web        # Webview：tsc + vite build
+pnpm run build            # 以上两者
+pnpm run watch            # 开发模式（esbuild + tsc + vite 并行 watch）
+pnpm run package          # 生产构建（用于 vsce publish）
 ```
