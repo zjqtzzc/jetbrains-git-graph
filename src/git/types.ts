@@ -165,5 +165,6 @@ export interface IdeaShelfEntry {
   description: string;
   date: string; // ISO date
   patchPath: string;
+  xmlPath: string;
   files: string[];
 }

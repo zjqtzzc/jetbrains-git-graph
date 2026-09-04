@@ -65,25 +65,19 @@ export class GitService {
     private readonly logger?: GitLogger,
   ) {}
 
-  private async execGit(
+  /** Runs a git exec call, logging the command line, duration, stderr and failures to `this.logger`. */
+  private async runGit<T extends string | Buffer>(
     args: string[],
-    maxBuffer = MAX_BUFFER,
-  ): Promise<string> {
+    exec: () => Promise<{ stdout: T; stderr: T }>,
+  ): Promise<T> {
     const start = Date.now();
     const commandLine = `> git ${args.join(" ")}`;
     try {
-      const { stdout, stderr } = await execFileAsync("git", args, {
-        cwd: this.cwd,
-        maxBuffer,
-        env: {
-          ...process.env,
-          LC_ALL: "C",
-          GIT_TERMINAL_PROMPT: "0",
-        },
-      });
+      const { stdout, stderr } = await exec();
       this.logger?.log("info", `${commandLine} [${Date.now() - start}ms]`);
-      if (stderr.trim()) {
-        this.logger?.log("warning", stderr.trim());
+      const stderrText = stderr.toString().trim();
+      if (stderrText) {
+        this.logger?.log("warning", stderrText);
       }
       return stdout;
     } catch (err: unknown) {
@@ -92,6 +86,41 @@ export class GitService {
       this.logger?.log("error", message.trim());
       throw err;
     }
+  }
+
+  private async execGit(
+    args: string[],
+    maxBuffer = MAX_BUFFER,
+  ): Promise<string> {
+    return this.runGit(args, () =>
+      execFileAsync("git", args, {
+        cwd: this.cwd,
+        maxBuffer,
+        env: {
+          ...process.env,
+          LC_ALL: "C",
+          GIT_TERMINAL_PROMPT: "0",
+        },
+      }),
+    );
+  }
+
+  private async execGitBuffer(
+    args: string[],
+    maxBuffer = MAX_BUFFER,
+  ): Promise<Buffer> {
+    return this.runGit(args, () =>
+      execFileAsync("git", args, {
+        cwd: this.cwd,
+        maxBuffer,
+        encoding: "buffer",
+        env: {
+          ...process.env,
+          LC_ALL: "C",
+          GIT_TERMINAL_PROMPT: "0",
+        },
+      }),
+    );
   }
 
   async checkGitAvailable(): Promise<boolean> {
@@ -351,30 +380,9 @@ export class GitService {
     if (!ref) {
       return Buffer.alloc(0);
     }
-    const start = Date.now();
-    const commandLine = `> git show ${ref}:${filePath}`;
     try {
-      const { stdout } = await execFileAsync(
-        "git",
-        ["show", `${ref}:${filePath}`],
-        {
-          cwd: this.cwd,
-          maxBuffer: MAX_BUFFER,
-          encoding: "buffer",
-          env: {
-            ...process.env,
-            LC_ALL: "C",
-            GIT_TERMINAL_PROMPT: "0",
-          },
-        },
-      );
-      this.logger?.log("info", `${commandLine} [${Date.now() - start}ms]`);
-      return stdout;
+      return await this.execGitBuffer(["show", `${ref}:${filePath}`]);
     } catch {
-      this.logger?.log(
-        "info",
-        `${commandLine} [${Date.now() - start}ms] (not found)`,
-      );
       return Buffer.alloc(0);
     }
   }
@@ -1380,7 +1388,7 @@ export class GitService {
       const xmlPath = path.join(shelfDir, item);
       try {
         const xmlContent = await fs.readFile(xmlPath, "utf-8");
-        const entry = this.parseIdeaShelfXml(xmlContent, shelfDir);
+        const entry = this.parseIdeaShelfXml(xmlContent, shelfDir, xmlPath);
         if (entry) entries.push(entry);
       } catch {
         // skip malformed entries
@@ -1397,6 +1405,7 @@ export class GitService {
   private parseIdeaShelfXml(
     xmlContent: string,
     shelfDir: string,
+    xmlPath: string,
   ): IdeaShelfEntry | null {
     // Parse: <changelist name="..." date="..." recycled="...">
     const nameMatch = xmlContent.match(/changelist\s+name="([^"]*)"/);
@@ -1424,7 +1433,7 @@ export class GitService {
     // Parse files from patch
     const files = this.parseFilesFromPatchPath(patchPath);
 
-    return { name, description, date, patchPath, files };
+    return { name, description, date, patchPath, xmlPath, files };
   }
 
   private parseFilesFromPatchPath(patchPath: string): string[] {
@@ -1504,18 +1513,20 @@ export class GitService {
   }
 
   async ideaUnshelveChanges(shelfName: string, drop?: boolean): Promise<void> {
-    const shelfDir = path.join(this.cwd, ".idea", "shelf");
-    const patchPath = path.join(shelfDir, shelfName, "shelved.patch");
+    const entry = await this.findIdeaShelfEntry(shelfName);
+    if (!entry) {
+      throw new Error(`Shelf "${shelfName}" not found`);
+    }
 
     try {
-      const patchContent = await fs.readFile(patchPath, "utf-8");
+      const patchContent = await fs.readFile(entry.patchPath, "utf-8");
       if (patchContent.trim()) {
         // Apply patch using git apply
         try {
-          await this.execGit(["apply", "--3way", patchPath]);
+          await this.execGit(["apply", "--3way", entry.patchPath]);
         } catch {
           // Try without --3way as fallback
-          await this.execGit(["apply", patchPath]);
+          await this.execGit(["apply", entry.patchPath]);
         }
       }
     } catch (err: unknown) {
@@ -1531,23 +1542,42 @@ export class GitService {
   }
 
   async deleteIdeaShelf(shelfName: string): Promise<void> {
+    const entry = await this.findIdeaShelfEntry(shelfName);
+    if (!entry) {
+      // Already gone (e.g. deleted concurrently) — deleting is idempotent.
+      return;
+    }
     const shelfDir = path.join(this.cwd, ".idea", "shelf");
-    const entryDir = path.join(shelfDir, shelfName);
-    const xmlPath = path.join(shelfDir, `${shelfName}.xml`);
+    const entryDir = path.dirname(entry.patchPath);
 
-    // Delete directory
+    // Delete the patch directory. If the patch lives directly in the shared
+    // shelf root (no per-entry subfolder), only remove the patch file itself
+    // so other entries aren't affected.
     try {
-      await fs.rm(entryDir, { recursive: true, force: true });
+      if (entryDir === shelfDir) {
+        await fs.unlink(entry.patchPath);
+      } else {
+        await fs.rm(entryDir, { recursive: true, force: true });
+      }
     } catch {
       // ignore
     }
 
     // Delete XML file
     try {
-      await fs.unlink(xmlPath);
+      await fs.unlink(entry.xmlPath);
     } catch {
       // ignore
     }
+  }
+
+  /** Look up a shelf entry by its changelist name, resolving its real on-disk paths. */
+  private async findIdeaShelfEntry(
+    shelfName: string,
+  ): Promise<IdeaShelfEntry | null> {
+    const entries = await this.getIdeaShelves();
+    const match = entries.find((e) => e.name === shelfName);
+    return match ?? null;
   }
 
   private sanitizeShelfName(name: string): string {
