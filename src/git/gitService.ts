@@ -860,8 +860,8 @@ export class GitService {
     this.invalidateCache();
   }
 
-  async fetch(remote = "origin"): Promise<void> {
-    await this.execGit(["fetch", remote]);
+  async fetch(): Promise<void> {
+    await this.execGit(["fetch", "--all", "--prune"]);
     this.invalidateCache();
   }
 
