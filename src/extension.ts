@@ -1,7 +1,7 @@
 import * as nodefs from "node:fs/promises";
 import * as vscode from "vscode";
-import { GitService } from "./git/gitService";
-import type { DiffFile, LaneSnapshot } from "./git/types";
+import { BranchDivergedError, GitService } from "./git/gitService";
+import type { DiffFile, GitLogger, LaneSnapshot } from "./git/types";
 import { MessageRouter } from "./messages/messageRouter";
 import { ErrorCode } from "./messages/protocol";
 import { CommitViewProvider } from "./views/commitViewProvider";
@@ -23,6 +23,13 @@ const NOT_GIT_REPO = { status: "not_git_repo" as const, data: null };
 /** Temporary storage for shelf diff content (base/modified) */
 const shelfDiffContent = new Map<string, string>();
 
+function formatLogTimestamp(date: Date): string {
+  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
+  const datePart = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const timePart = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
+  return `${datePart} ${timePart}`;
+}
+
 /** Wrap a git operation with progress events */
 function withProgress(
   messageRouter: MessageRouter,
@@ -37,6 +44,18 @@ function withProgress(
 export function activate(context: vscode.ExtensionContext) {
   // 1. MessageRouter (always created)
   const messageRouter = new MessageRouter();
+
+  // 1b. Output channel: logs every git CLI command this extension runs
+  const gitOutputChannel = vscode.window.createOutputChannel("Git Graph");
+  context.subscriptions.push(gitOutputChannel);
+  const gitLogger: GitLogger = {
+    log: (level, message) => {
+      const timestamp = formatLogTimestamp(new Date());
+      for (const line of message.split("\n")) {
+        gitOutputChannel.appendLine(`${timestamp} [${level}] ${line}`);
+      }
+    },
+  };
 
   // 2. GitLogViewProvider (always registered)
   const logProvider = new GitLogViewProvider(
@@ -61,11 +80,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   const allGitServices: GitService[] = [];
   for (const root of allWorkspaceRoots) {
-    allGitServices.push(new GitService(root));
+    allGitServices.push(new GitService(root, gitLogger));
   }
 
   if (workspaceRoot) {
-    gitService = allGitServices[0] ?? new GitService(workspaceRoot);
+    gitService = allGitServices[0] ?? new GitService(workspaceRoot, gitLogger);
 
     // Register virtual document provider for git file content
     const contentProvider = new GitContentProvider(gitService);
@@ -730,7 +749,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   messageRouter.handle("executeRollback", async (params) => {
-    if (!gitService) return NOT_GIT_REPO;
+    if (!gitService || !workspaceRoot) return NOT_GIT_REPO;
     const filePaths = params.filePaths as string[];
     const deleteLocalCopies = params.deleteLocalCopies as boolean;
 
@@ -748,7 +767,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (deleteLocalCopies) {
             // Delete untracked/added file from filesystem
             const absPath = vscode.Uri.joinPath(
-              vscode.Uri.file(workspaceRoot!),
+              vscode.Uri.file(workspaceRoot),
               filePath,
             );
             await vscode.workspace.fs.delete(absPath);
@@ -774,31 +793,38 @@ export function activate(context: vscode.ExtensionContext) {
     return { success: true };
   });
 
-  messageRouter.handle("pullBranch", async (params) => {
+  messageRouter.handle("updateBranch", async (params) => {
     if (!gitService) return NOT_GIT_REPO;
-    const branchName = params.branchName as string | undefined;
+    let branchName = params.branchName as string | undefined;
+    const strategy = params.strategy as "merge" | "rebase" | undefined;
     return withProgress(messageRouter, async () => {
-      await gitService.pull(branchName);
-      messageRouter.broadcastEvent("gitStateChanged", { scope: "all" });
-      return { success: true };
-    });
-  });
-
-  messageRouter.handle("pullRebase", async (params) => {
-    if (!gitService) return NOT_GIT_REPO;
-    const branchName = params.branchName as string | undefined;
-    return withProgress(messageRouter, async () => {
-      await gitService.pullRebase(branchName);
-      messageRouter.broadcastEvent("gitStateChanged", { scope: "all" });
-      return { success: true };
-    });
-  });
-
-  messageRouter.handle("pullMerge", async (params) => {
-    if (!gitService) return NOT_GIT_REPO;
-    const branchName = params.branchName as string | undefined;
-    return withProgress(messageRouter, async () => {
-      await gitService.pull(branchName);
+      if (!branchName) {
+        branchName = (await gitService.getCurrentBranch()) ?? undefined;
+        if (!branchName) {
+          throw new Error("Not currently on a branch");
+        }
+      }
+      try {
+        await gitService.updateBranch(branchName, strategy);
+      } catch (err: unknown) {
+        if (err instanceof BranchDivergedError) {
+          const choice = await vscode.window.showWarningMessage(
+            `Branch "${err.branchName}" has diverged from ${err.remote}/${err.remoteBranch} and can't be fast-forwarded.`,
+            { modal: true },
+            "Merge",
+            "Rebase",
+          );
+          if (choice !== "Merge" && choice !== "Rebase") {
+            return { success: false, cancelled: true };
+          }
+          await gitService.updateBranch(
+            err.branchName,
+            choice === "Merge" ? "merge" : "rebase",
+          );
+        } else {
+          throw err;
+        }
+      }
       messageRouter.broadcastEvent("gitStateChanged", { scope: "all" });
       return { success: true };
     });

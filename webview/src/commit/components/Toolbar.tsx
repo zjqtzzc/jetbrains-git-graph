@@ -82,12 +82,12 @@ export function Toolbar({
           <DiffIcon />
         </button>
       </Tooltip>
-      <Tooltip text="Pull">
+      <Tooltip text="Update">
         <button
           type="button"
           className="commit-toolbar-btn"
           style={{ opacity: 1 }}
-          onClick={() => bridge.request("pullBranch", {})}
+          onClick={() => bridge.request("updateBranch", {})}
         >
           <PullIcon />
         </button>

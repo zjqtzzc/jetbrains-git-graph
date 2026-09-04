@@ -1,3 +1,9 @@
+export type GitLogLevel = "info" | "warning" | "error";
+
+export interface GitLogger {
+  log(level: GitLogLevel, message: string): void;
+}
+
 export interface CommitNode {
   hash: string;
   shortHash: string;

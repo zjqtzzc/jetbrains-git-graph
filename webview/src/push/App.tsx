@@ -179,7 +179,7 @@ export function PushApp() {
     setError(null);
     setPushing(true);
     try {
-      await bridge.request("pullRebase", { branchName });
+      await bridge.request("updateBranch", { branchName, strategy: "rebase" });
       // After successful rebase, retry push
       await bridge.request("executePush", {
         branchName,
@@ -206,7 +206,7 @@ export function PushApp() {
     setError(null);
     setPushing(true);
     try {
-      await bridge.request("pullMerge", { branchName });
+      await bridge.request("updateBranch", { branchName, strategy: "merge" });
       // After successful merge, retry push
       await bridge.request("executePush", {
         branchName,

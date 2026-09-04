@@ -1,5 +1,20 @@
 # Changelog / 更新日志
 
+## [0.4.18] - 2026-09-04
+
+### 新增
+- **"Git Graph" 输出通道**：插件发出的每条 git 命令、耗时、stderr 输出和失败原因，现在都会记录到独立的 "Git Graph" 输出通道（Output 面板下拉列表可见），带时间戳和 info/warning/error 级别
+- **统一的分支更新逻辑（`updateBranch`）**：替换原来的 `pull`/`pull --rebase`/`pull` 三个入口
+  - 更新非当前分支时只做 fast-forward（`git fetch remote:branch`），不会像原来的 `git pull` 那样误合并到当前分支或悄悄什么都不做；分叉时直接报错，提示需要手动切换分支处理
+  - 更新当前分支时优先尝试 fast-forward；无法快进时不再像 `git pull` 那样默认走合并，而是弹出原生对话框，由用户在 Merge / Rebase 之间选择
+  - Push 面板"推送被拒绝后 Rebase/Merge 再重推"的两个按钮，以及工具栏的 Pull 按钮，全部统一走这套新逻辑
+
+### 修复
+- **更新非当前分支时不生效**：原来的 `git pull origin <branch>` 在 `<branch>` 不是当前签出分支时，只会更新远程追踪分支，本地分支指针实际上纹丝不动，看起来像是"更新了但什么也没变"
+
+### 其他
+- GUI 上所有"Pull"相关的按钮提示文字统一改为"Update"
+
 ## [0.4.17] - 2026-06-20
 
 ### Added / 新增

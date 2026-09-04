@@ -11,6 +11,7 @@ import type {
   CommitNode,
   DiffFile,
   FileStatus,
+  GitLogger,
   GraphLayoutResult,
   IdeaShelfEntry,
   LaneSnapshot,
@@ -21,6 +22,18 @@ import type {
 } from "./types";
 
 const execFileAsync = promisify(execFile);
+
+/** Thrown by updateBranch() when the checked-out branch can't be fast-forwarded. */
+export class BranchDivergedError extends Error {
+  constructor(
+    public readonly branchName: string,
+    public readonly remote: string,
+    public readonly remoteBranch: string,
+  ) {
+    super(`Branch "${branchName}" has diverged from ${remote}/${remoteBranch}`);
+    this.name = "BranchDivergedError";
+  }
+}
 
 // For parsing git output (actual null byte)
 const FIELD_SEP = "\x00";
@@ -47,22 +60,38 @@ const LOG_FORMAT = [
 export class GitService {
   readonly cache = new GitCache();
 
-  constructor(private readonly cwd: string) {}
+  constructor(
+    private readonly cwd: string,
+    private readonly logger?: GitLogger,
+  ) {}
 
   private async execGit(
     args: string[],
     maxBuffer = MAX_BUFFER,
   ): Promise<string> {
-    const { stdout } = await execFileAsync("git", args, {
-      cwd: this.cwd,
-      maxBuffer,
-      env: {
-        ...process.env,
-        LC_ALL: "C",
-        GIT_TERMINAL_PROMPT: "0",
-      },
-    });
-    return stdout;
+    const start = Date.now();
+    const commandLine = `> git ${args.join(" ")}`;
+    try {
+      const { stdout, stderr } = await execFileAsync("git", args, {
+        cwd: this.cwd,
+        maxBuffer,
+        env: {
+          ...process.env,
+          LC_ALL: "C",
+          GIT_TERMINAL_PROMPT: "0",
+        },
+      });
+      this.logger?.log("info", `${commandLine} [${Date.now() - start}ms]`);
+      if (stderr.trim()) {
+        this.logger?.log("warning", stderr.trim());
+      }
+      return stdout;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger?.log("error", `${commandLine} [${Date.now() - start}ms]`);
+      this.logger?.log("error", message.trim());
+      throw err;
+    }
   }
 
   async checkGitAvailable(): Promise<boolean> {
@@ -322,6 +351,8 @@ export class GitService {
     if (!ref) {
       return Buffer.alloc(0);
     }
+    const start = Date.now();
+    const commandLine = `> git show ${ref}:${filePath}`;
     try {
       const { stdout } = await execFileAsync(
         "git",
@@ -337,8 +368,13 @@ export class GitService {
           },
         },
       );
+      this.logger?.log("info", `${commandLine} [${Date.now() - start}ms]`);
       return stdout;
     } catch {
+      this.logger?.log(
+        "info",
+        `${commandLine} [${Date.now() - start}ms] (not found)`,
+      );
       return Buffer.alloc(0);
     }
   }
@@ -721,21 +757,106 @@ export class GitService {
     return parseLogOutput(output);
   }
 
-  async pull(branchName?: string): Promise<void> {
-    const args = ["pull", "--autostash"];
-    if (branchName) {
-      args.push("origin", branchName);
+  /**
+   * Update a local branch from its upstream.
+   *
+   * - Not the checked-out branch: fast-forward only (`git fetch <remote> <remoteBranch>:<branch>`).
+   *   Never touches the working tree or the currently checked-out branch. Throws if the
+   *   update is not a fast-forward.
+   * - The checked-out branch, no strategy given: tries a fast-forward merge first. If that's
+   *   not possible, throws BranchDivergedError so the caller can ask the user to pick a
+   *   strategy and call this again with it.
+   * - The checked-out branch, strategy given: runs `merge` or `rebase` against the upstream.
+   */
+  async updateBranch(
+    branchName: string,
+    strategy?: "merge" | "rebase",
+  ): Promise<void> {
+    const isLocalBranch = await this.execGit([
+      "rev-parse",
+      "--verify",
+      "--quiet",
+      `refs/heads/${branchName}`,
+    ])
+      .then(() => true)
+      .catch(() => false);
+    if (!isLocalBranch) {
+      throw new Error(`"${branchName}" is not a local branch`);
     }
-    await this.execGit(args);
-    this.invalidateCache();
-  }
 
-  async pullRebase(branchName?: string): Promise<void> {
-    const args = ["pull", "--rebase", "--autostash"];
-    if (branchName) {
-      args.push("origin", branchName);
+    let upstream: string;
+    try {
+      upstream = (
+        await this.execGit([
+          "rev-parse",
+          "--abbrev-ref",
+          "--symbolic-full-name",
+          `${branchName}@{upstream}`,
+        ])
+      ).trim();
+    } catch {
+      throw new Error(`Branch "${branchName}" has no upstream configured`);
     }
-    await this.execGit(args);
+    const slashIdx = upstream.indexOf("/");
+    const remote = upstream.substring(0, slashIdx);
+    const remoteBranch = upstream.substring(slashIdx + 1);
+
+    const currentBranch = await this.getCurrentBranch();
+    const isCurrent = branchName === currentBranch;
+
+    if (!isCurrent) {
+      if (strategy) {
+        throw new Error(
+          "Merge/rebase is only supported for the currently checked out branch",
+        );
+      }
+      try {
+        await this.execGit(["fetch", remote, `${remoteBranch}:${branchName}`]);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("non-fast-forward")) {
+          throw new Error(
+            `Branch "${branchName}" has diverged from ${remote}/${remoteBranch}. Check it out to resolve manually.`,
+          );
+        }
+        throw err;
+      }
+      this.invalidateCache();
+      return;
+    }
+
+    // Checked-out branch: refresh the remote-tracking ref first.
+    await this.execGit(["fetch", remote, remoteBranch]);
+
+    if (strategy === "merge") {
+      await this.execGit([
+        "merge",
+        "--autostash",
+        "--no-edit",
+        `${remote}/${remoteBranch}`,
+      ]);
+    } else if (strategy === "rebase") {
+      await this.execGit([
+        "rebase",
+        "--autostash",
+        `${remote}/${remoteBranch}`,
+      ]);
+    } else {
+      try {
+        await this.execGit([
+          "merge",
+          "--ff-only",
+          "--autostash",
+          `${remote}/${remoteBranch}`,
+        ]);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("Not possible to fast-forward")) {
+          throw new BranchDivergedError(branchName, remote, remoteBranch);
+        }
+        throw err;
+      }
+    }
     this.invalidateCache();
   }
 

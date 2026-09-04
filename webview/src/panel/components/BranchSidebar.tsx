@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { bridge } from "../../shared/bridge";
+import { bridge, bridgeWithProgress } from "../../shared/bridge";
 import { Tooltip } from "../../shared/components/Tooltip";
 import "../../shared/components/Tooltip.css";
 import { usePanelStore } from "../../shared/store/panel-store";
@@ -27,9 +27,13 @@ export function BranchSidebar({
     }
   }, [onNewBranch]);
 
-  const handleUpdateSelected = useCallback(() => {
-    if (selectedBranch) {
-      bridge.request("pullBranch", { branchName: selectedBranch });
+  const handleUpdateSelected = useCallback(async () => {
+    if (!selectedBranch) return;
+    try {
+      await bridgeWithProgress("updateBranch", { branchName: selectedBranch });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      bridge.request("showErrorNotification", { message: msg }).catch(() => {});
     }
   }, [selectedBranch]);
 

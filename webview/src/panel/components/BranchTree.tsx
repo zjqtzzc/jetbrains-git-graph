@@ -1222,9 +1222,10 @@ function BranchContextMenu({
   const handleUpdate = async () => {
     onClose();
     try {
-      await bridgeWithProgress("pullBranch", { branchName: branch.name });
+      await bridgeWithProgress("updateBranch", { branchName: branch.name });
     } catch (err) {
-      console.error("Update failed:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      bridge.request("showErrorNotification", { message: msg }).catch(() => {});
     }
   };
 
