@@ -209,10 +209,15 @@ export class GitService {
       `--format=${localFormat}`,
     ]);
 
+    // %(symref) is non-empty only for symbolic refs like refs/remotes/<remote>/HEAD
+    // (which %(refname:short) shortens down to just "<remote>", not "<remote>/HEAD"),
+    // so checking it directly is the reliable way to exclude those pointer entries.
+    const remoteFormat = `${localFormat}${REF_FMT_FIELD_SEP}%(symref)`;
+
     const remoteOutput = await this.execGit([
       "branch",
       "-r",
-      `--format=${localFormat}`,
+      `--format=${remoteFormat}`,
     ]).catch(() => "");
 
     const branches: BranchInfo[] = [];
@@ -248,9 +253,10 @@ export class GitService {
       const fields = line.split(FIELD_SEP);
       const name = fields[0]?.trim() ?? "";
       const lastCommitHash = fields[4]?.trim() ?? "";
+      const symref = fields[5]?.trim() ?? "";
 
-      // Skip HEAD pointers like origin/HEAD
-      if (name.endsWith("/HEAD")) {
+      // Skip symbolic refs like origin/HEAD -> origin/main
+      if (symref) {
         continue;
       }
 
