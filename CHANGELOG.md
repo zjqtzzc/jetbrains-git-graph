@@ -2,6 +2,9 @@
 
 ## [0.4.19] - 2026-09-06
 
+### 修复
+- **Commit 面板活动栏图标**：原来的靶心图标风格突兀，改成和 VS Code 内置 Source Control 面板一致的分支图标，视觉上更统一
+
 ### 其他
 - **重构 `gitService.ts`**：原本近 2000 行的 Git CLI 封装拆分为 `src/git/gitService/` 目录下按领域划分的模块（log/diff/branches/mergeRebase/remote/status/stash/ideaShelf/parsers 等），`gitService.ts` 保留为门面类，对外接口和行为不变；同时为所有函数补充了中文注释
 
