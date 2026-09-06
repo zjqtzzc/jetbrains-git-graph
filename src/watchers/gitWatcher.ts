@@ -56,6 +56,25 @@ export class GitWatcher implements vscode.Disposable {
     tagsWatcher.onDidDelete(() => this.notify("branches"));
     this.disposables.push(tagsWatcher);
 
+    // .git/refs/stash + .git/logs/refs/stash → status (shelf/stash list)
+    // `stash push`/`pop` also touch `index` and get picked up that way, but
+    // `stash drop`/`clear` only touch these two files.
+    const stashRefWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(gitBase, "refs/stash"),
+    );
+    stashRefWatcher.onDidChange(() => this.notify("status"));
+    stashRefWatcher.onDidCreate(() => this.notify("status"));
+    stashRefWatcher.onDidDelete(() => this.notify("status"));
+    this.disposables.push(stashRefWatcher);
+
+    const stashLogWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(gitBase, "logs/refs/stash"),
+    );
+    stashLogWatcher.onDidChange(() => this.notify("status"));
+    stashLogWatcher.onDidCreate(() => this.notify("status"));
+    stashLogWatcher.onDidDelete(() => this.notify("status"));
+    this.disposables.push(stashLogWatcher);
+
     // .git/index → status
     const indexWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "index"),

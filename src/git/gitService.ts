@@ -84,6 +84,11 @@ export class GitService {
       const message = err instanceof Error ? err.message : String(err);
       this.logger?.log("error", `${commandLine} [${Date.now() - start}ms]`);
       this.logger?.log("error", message.trim());
+      if (/index\.lock/i.test(message)) {
+        throw new Error(
+          "Another Git process seems to be running (e.g. a command in a terminal). Please wait for it to finish and try again.",
+        );
+      }
       throw err;
     }
   }
