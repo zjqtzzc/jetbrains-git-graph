@@ -2,11 +2,9 @@ import * as vscode from "vscode";
 import type { GitCache } from "../git/cache";
 import type { MessageRouter } from "../messages/messageRouter";
 
-type Scope = "all" | "branches" | "status" | "mergeState" | "log";
-
 export class GitWatcher implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
-  private debounceTimers = new Map<Scope, ReturnType<typeof setTimeout>>();
+  private debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private readonly workspaceRoot: string,
@@ -20,142 +18,139 @@ export class GitWatcher implements vscode.Disposable {
   private setupFileWatchers(): void {
     const gitBase = vscode.Uri.file(`${this.workspaceRoot}/.git`);
 
-    // .git/HEAD → all
+    // .git/HEAD（切换分支/checkout）
     const headWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "HEAD"),
     );
-    headWatcher.onDidChange(() => this.notify("all"));
-    headWatcher.onDidCreate(() => this.notify("all"));
-    headWatcher.onDidDelete(() => this.notify("all"));
+    headWatcher.onDidChange(() => this.notify());
+    headWatcher.onDidCreate(() => this.notify());
+    headWatcher.onDidDelete(() => this.notify());
     this.disposables.push(headWatcher);
 
-    // .git/refs/heads/** → branches
+    // .git/refs/heads/**
     const headsWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "refs/heads/**"),
     );
-    headsWatcher.onDidChange(() => this.notify("branches"));
-    headsWatcher.onDidCreate(() => this.notify("branches"));
-    headsWatcher.onDidDelete(() => this.notify("branches"));
+    headsWatcher.onDidChange(() => this.notify());
+    headsWatcher.onDidCreate(() => this.notify());
+    headsWatcher.onDidDelete(() => this.notify());
     this.disposables.push(headsWatcher);
 
-    // .git/refs/remotes/** → branches
+    // .git/refs/remotes/**
     const remotesWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "refs/remotes/**"),
     );
-    remotesWatcher.onDidChange(() => this.notify("branches"));
-    remotesWatcher.onDidCreate(() => this.notify("branches"));
-    remotesWatcher.onDidDelete(() => this.notify("branches"));
+    remotesWatcher.onDidChange(() => this.notify());
+    remotesWatcher.onDidCreate(() => this.notify());
+    remotesWatcher.onDidDelete(() => this.notify());
     this.disposables.push(remotesWatcher);
 
-    // .git/refs/tags/** → branches (tags group)
+    // .git/refs/tags/**
     const tagsWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "refs/tags/**"),
     );
-    tagsWatcher.onDidChange(() => this.notify("branches"));
-    tagsWatcher.onDidCreate(() => this.notify("branches"));
-    tagsWatcher.onDidDelete(() => this.notify("branches"));
+    tagsWatcher.onDidChange(() => this.notify());
+    tagsWatcher.onDidCreate(() => this.notify());
+    tagsWatcher.onDidDelete(() => this.notify());
     this.disposables.push(tagsWatcher);
 
-    // .git/refs/stash + .git/logs/refs/stash → status (shelf/stash list)
-    // `stash push`/`pop` also touch `index` and get picked up that way, but
-    // `stash drop`/`clear` only touch these two files.
+    // .git/refs/stash + .git/logs/refs/stash（shelf/stash 列表）
+    // `stash push`/`pop` 也会碰 `index`，能被那边监听到；但
+    // `stash drop`/`clear` 只会碰这两个文件。
     const stashRefWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "refs/stash"),
     );
-    stashRefWatcher.onDidChange(() => this.notify("status"));
-    stashRefWatcher.onDidCreate(() => this.notify("status"));
-    stashRefWatcher.onDidDelete(() => this.notify("status"));
+    stashRefWatcher.onDidChange(() => this.notify());
+    stashRefWatcher.onDidCreate(() => this.notify());
+    stashRefWatcher.onDidDelete(() => this.notify());
     this.disposables.push(stashRefWatcher);
 
     const stashLogWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "logs/refs/stash"),
     );
-    stashLogWatcher.onDidChange(() => this.notify("status"));
-    stashLogWatcher.onDidCreate(() => this.notify("status"));
-    stashLogWatcher.onDidDelete(() => this.notify("status"));
+    stashLogWatcher.onDidChange(() => this.notify());
+    stashLogWatcher.onDidCreate(() => this.notify());
+    stashLogWatcher.onDidDelete(() => this.notify());
     this.disposables.push(stashLogWatcher);
 
-    // .git/index → status
+    // .git/index（暂存区）
     const indexWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "index"),
     );
-    indexWatcher.onDidChange(() => this.notify("status"));
+    indexWatcher.onDidChange(() => this.notify());
     this.disposables.push(indexWatcher);
 
-    // .git/MERGE_HEAD → mergeState
+    // .git/MERGE_HEAD
     const mergeHeadWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "MERGE_HEAD"),
     );
-    mergeHeadWatcher.onDidChange(() => this.notify("mergeState"));
-    mergeHeadWatcher.onDidCreate(() => this.notify("mergeState"));
-    mergeHeadWatcher.onDidDelete(() => this.notify("mergeState"));
+    mergeHeadWatcher.onDidChange(() => this.notify());
+    mergeHeadWatcher.onDidCreate(() => this.notify());
+    mergeHeadWatcher.onDidDelete(() => this.notify());
     this.disposables.push(mergeHeadWatcher);
 
-    // .git/CHERRY_PICK_HEAD → mergeState (cherry-pick state)
+    // .git/CHERRY_PICK_HEAD（cherry-pick 进行中状态）
     const cherryPickHeadWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "CHERRY_PICK_HEAD"),
     );
-    cherryPickHeadWatcher.onDidChange(() => this.notify("mergeState"));
-    cherryPickHeadWatcher.onDidCreate(() => this.notify("mergeState"));
-    cherryPickHeadWatcher.onDidDelete(() => this.notify("mergeState"));
+    cherryPickHeadWatcher.onDidChange(() => this.notify());
+    cherryPickHeadWatcher.onDidCreate(() => this.notify());
+    cherryPickHeadWatcher.onDidDelete(() => this.notify());
     this.disposables.push(cherryPickHeadWatcher);
 
-    // .git/rebase-merge/** → mergeState (rebase state)
+    // .git/rebase-merge/**（rebase 进行中状态）
     const rebaseMergeWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "rebase-merge/**"),
     );
-    rebaseMergeWatcher.onDidChange(() => this.notify("mergeState"));
-    rebaseMergeWatcher.onDidCreate(() => this.notify("mergeState"));
-    rebaseMergeWatcher.onDidDelete(() => this.notify("mergeState"));
+    rebaseMergeWatcher.onDidChange(() => this.notify());
+    rebaseMergeWatcher.onDidCreate(() => this.notify());
+    rebaseMergeWatcher.onDidDelete(() => this.notify());
     this.disposables.push(rebaseMergeWatcher);
 
-    // .git/rebase-apply/** → mergeState (rebase state)
+    // .git/rebase-apply/**（rebase 进行中状态）
     const rebaseApplyWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "rebase-apply/**"),
     );
-    rebaseApplyWatcher.onDidChange(() => this.notify("mergeState"));
-    rebaseApplyWatcher.onDidCreate(() => this.notify("mergeState"));
-    rebaseApplyWatcher.onDidDelete(() => this.notify("mergeState"));
+    rebaseApplyWatcher.onDidChange(() => this.notify());
+    rebaseApplyWatcher.onDidCreate(() => this.notify());
+    rebaseApplyWatcher.onDidDelete(() => this.notify());
     this.disposables.push(rebaseApplyWatcher);
 
-    // .git/COMMIT_EDITMSG → log
+    // .git/COMMIT_EDITMSG（产生了新提交）
     const commitMsgWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(gitBase, "COMMIT_EDITMSG"),
     );
-    commitMsgWatcher.onDidChange(() => this.notify("log"));
-    commitMsgWatcher.onDidCreate(() => this.notify("log"));
+    commitMsgWatcher.onDidChange(() => this.notify());
+    commitMsgWatcher.onDidCreate(() => this.notify());
     this.disposables.push(commitMsgWatcher);
   }
 
   private setupEditorWatchers(): void {
-    // Save → status refresh
+    // 保存文件 → 刷新（工作区改动）
     this.disposables.push(
-      vscode.workspace.onDidSaveTextDocument(() => this.notify("status")),
+      vscode.workspace.onDidSaveTextDocument(() => this.notify()),
     );
   }
 
-  private notify(scope: Scope): void {
-    // Debounce per scope, 300ms
-    const existing = this.debounceTimers.get(scope);
-    if (existing) {
-      clearTimeout(existing);
+  private notify(): void {
+    // 所有监听源共用同一个 300ms 防抖——一次 git 操作（比如 rebase）
+    // 可能会短时间内连续触发上面好几个路径的变化。
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
     }
 
-    this.debounceTimers.set(
-      scope,
-      setTimeout(() => {
-        this.debounceTimers.delete(scope);
-        this.cache.invalidate();
-        this.messageRouter.broadcastEvent("gitStateChanged", { scope });
-      }, 300),
-    );
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = undefined;
+      this.cache.invalidate();
+      this.messageRouter.broadcastEvent("gitStateChanged", {});
+    }, 300);
   }
 
   dispose(): void {
-    for (const timer of this.debounceTimers.values()) {
-      clearTimeout(timer);
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
     }
-    this.debounceTimers.clear();
     for (const d of this.disposables) {
       d.dispose();
     }

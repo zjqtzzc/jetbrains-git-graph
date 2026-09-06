@@ -29,7 +29,7 @@ export class CommitViewProvider implements vscode.WebviewViewProvider {
     const routerDisposable = this.messageRouter.registerWebview(webview);
     webviewView.onDidDispose(() => routerDisposable.dispose());
 
-    // First time opening: focus git log panel after a delay
+    // 首次打开：延迟一段时间后聚焦到 git log 面板
     setTimeout(() => {
       if (webviewView.visible) {
         void vscode.commands.executeCommand("git-brains.gitLog.focus");
@@ -37,25 +37,23 @@ export class CommitViewProvider implements vscode.WebviewViewProvider {
           cache.invalidate();
         }
         this.messageRouter.broadcastEvent("commitStateChanged", {});
-        this.messageRouter.broadcastEvent("gitStateChanged", { scope: "all" });
+        this.messageRouter.broadcastEvent("gitStateChanged", {});
       }
     }, 200);
 
-    // When commit panel becomes visible, also show the Git Log panel and refresh both
-    // When hidden (clicked again to collapse), hide the Git Log panel too
+    // Commit 面板变为可见时，同步显示 Git Log 面板并刷新两者
+    // 隐藏时（再次点击收起）也把 Git Log 面板一起隐藏
     webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
-        // Small delay to ensure panels are ready
+        // 稍微延迟一下，确保面板都准备好了
         setTimeout(() => {
           void vscode.commands.executeCommand("git-brains.gitLog.focus");
-          // Invalidate all git caches to ensure fresh data
+          // 清空所有 git 缓存，确保拿到的是最新数据
           for (const cache of this.caches) {
             cache.invalidate();
           }
           this.messageRouter.broadcastEvent("commitStateChanged", {});
-          this.messageRouter.broadcastEvent("gitStateChanged", {
-            scope: "all",
-          });
+          this.messageRouter.broadcastEvent("gitStateChanged", {});
         }, 100);
       } else {
         void vscode.commands.executeCommand("workbench.action.closePanel");
