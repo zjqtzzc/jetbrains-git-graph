@@ -1,0 +1,156 @@
+import type { CommitNode } from "../types";
+import { getCurrentBranch, getDefaultRemote } from "./branches";
+import { FMT_RECORD_SEP, LOG_FORMAT } from "./constants";
+import type { GitContext } from "./context";
+import { BranchDivergedError } from "./errors";
+import { parseLogOutput } from "./parsers";
+
+/** 将本地分支推送到远程，`force` 为 true 时使用 `--force-with-lease`。 */
+export async function push(
+  ctx: GitContext,
+  branchName: string,
+  force = false,
+  remote = "origin",
+  targetBranch?: string,
+): Promise<string> {
+  const args = ["push"];
+  if (force) args.push("--force-with-lease");
+  args.push(remote, `${branchName}:${targetBranch || branchName}`);
+  const output = await ctx.execGit(args);
+  ctx.invalidateCache();
+  return output;
+}
+
+/**
+ * 获取领先于远程追踪分支的提交列表（按由新到旧排序）。
+ * 若尚未设置上游，则认为本地全部提交都是"领先"的。
+ */
+export async function getAheadCommits(
+  ctx: GitContext,
+  branchName: string,
+  remote?: string,
+): Promise<CommitNode[]> {
+  const remoteName = remote || (await getDefaultRemote(ctx, branchName));
+  const upstream = `${remoteName}/${branchName}`;
+  // Check if upstream exists
+  try {
+    await ctx.execGit(["rev-parse", "--verify", upstream]);
+  } catch {
+    // No upstream — all local commits are "ahead"
+    const args = [
+      "log",
+      `--format=${LOG_FORMAT}${FMT_RECORD_SEP}`,
+      branchName,
+      "--max-count=50",
+    ];
+    const output = await ctx.execGit(args);
+    return parseLogOutput(output);
+  }
+  const args = [
+    "log",
+    `--format=${LOG_FORMAT}${FMT_RECORD_SEP}`,
+    `${upstream}..${branchName}`,
+  ];
+  const output = await ctx.execGit(args);
+  return parseLogOutput(output);
+}
+
+/**
+ * 从上游更新本地分支。
+ *
+ * - 非当前检出分支：仅做 fast-forward（`git fetch <remote> <remoteBranch>:<branch>`），
+ *   不会触碰工作区或当前检出分支；无法快进时抛出错误。
+ * - 当前检出分支且未指定策略：先尝试 fast-forward 合并；不行的话抛出 BranchDivergedError，
+ *   由调用方询问用户选择策略后再次调用。
+ * - 当前检出分支且指定了策略：按 `merge` 或 `rebase` 策略与上游同步。
+ */
+export async function updateBranch(
+  ctx: GitContext,
+  branchName: string,
+  strategy?: "merge" | "rebase",
+): Promise<void> {
+  const isLocalBranch = await ctx
+    .execGit(["rev-parse", "--verify", "--quiet", `refs/heads/${branchName}`])
+    .then(() => true)
+    .catch(() => false);
+  if (!isLocalBranch) {
+    throw new Error(`"${branchName}" is not a local branch`);
+  }
+
+  let upstream: string;
+  try {
+    upstream = (
+      await ctx.execGit([
+        "rev-parse",
+        "--abbrev-ref",
+        "--symbolic-full-name",
+        `${branchName}@{upstream}`,
+      ])
+    ).trim();
+  } catch {
+    throw new Error(`Branch "${branchName}" has no upstream configured`);
+  }
+  const slashIdx = upstream.indexOf("/");
+  const remote = upstream.substring(0, slashIdx);
+  const remoteBranch = upstream.substring(slashIdx + 1);
+
+  const currentBranch = await getCurrentBranch(ctx);
+  const isCurrent = branchName === currentBranch;
+
+  if (!isCurrent) {
+    if (strategy) {
+      throw new Error(
+        "Merge/rebase is only supported for the currently checked out branch",
+      );
+    }
+    try {
+      await ctx.execGit(["fetch", remote, `${remoteBranch}:${branchName}`]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("non-fast-forward")) {
+        throw new Error(
+          `Branch "${branchName}" has diverged from ${remote}/${remoteBranch}. Check it out to resolve manually.`,
+        );
+      }
+      throw err;
+    }
+    ctx.invalidateCache();
+    return;
+  }
+
+  // Checked-out branch: refresh the remote-tracking ref first.
+  await ctx.execGit(["fetch", remote, remoteBranch]);
+
+  if (strategy === "merge") {
+    await ctx.execGit([
+      "merge",
+      "--autostash",
+      "--no-edit",
+      `${remote}/${remoteBranch}`,
+    ]);
+  } else if (strategy === "rebase") {
+    await ctx.execGit(["rebase", "--autostash", `${remote}/${remoteBranch}`]);
+  } else {
+    try {
+      await ctx.execGit([
+        "merge",
+        "--ff-only",
+        "--autostash",
+        `${remote}/${remoteBranch}`,
+      ]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("Not possible to fast-forward")) {
+        throw new BranchDivergedError(branchName, remote, remoteBranch);
+      }
+      throw err;
+    }
+  }
+  ctx.invalidateCache();
+}
+
+/** 拉取所有远程的更新并清理已失效的远程分支引用（`fetch --all --prune`）。 */
+export async function fetch(ctx: GitContext): Promise<void> {
+  await ctx.execGit(["fetch", "--all", "--prune"]);
+  ctx.invalidateCache();
+}

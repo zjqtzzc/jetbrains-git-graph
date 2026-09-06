@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## [0.4.19] - 2026-09-06
+
+### 其他
+- **重构 `gitService.ts`**：原本近 2000 行的 Git CLI 封装拆分为 `src/git/gitService/` 目录下按领域划分的模块（log/diff/branches/mergeRebase/remote/status/stash/ideaShelf/parsers 等），`gitService.ts` 保留为门面类，对外接口和行为不变；同时为所有函数补充了中文注释
+
 ## [0.4.18] - 2026-09-04
 
 ### 新增
