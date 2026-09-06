@@ -1,16 +1,13 @@
 import * as vscode from "vscode";
+import type { EventMessage, RollbackFileInfo } from "../../shared/protocol";
 import type { MessageRouter } from "../messages/messageRouter";
 import { getWebviewHtml } from "./html";
 
-export interface RollbackFileInfo {
-  path: string;
-  status: string;
-  staged: boolean;
-}
+export type { RollbackFileInfo };
 
 /**
- * Opens a "Rollback Changes" webview panel in an editor tab,
- * similar to IntelliJ IDEA's rollback dialog.
+ * 在编辑器标签页里打开一个"回滚改动"webview 面板，
+ * 类似 IntelliJ IDEA 的 rollback 对话框。
  */
 export class RollbackPanel {
   private panel: vscode.WebviewPanel | undefined;
@@ -25,12 +22,13 @@ export class RollbackPanel {
 
     if (this.panel) {
       this.panel.reveal();
-      // Re-send init data with updated file list
-      this.panel.webview.postMessage({
+      // 面板已存在：重新发送最新的文件列表
+      const msg: EventMessage = {
         type: "event",
         event: "rollbackPanelInit",
         data: { files },
-      });
+      };
+      this.panel.webview.postMessage(msg);
       return;
     }
 

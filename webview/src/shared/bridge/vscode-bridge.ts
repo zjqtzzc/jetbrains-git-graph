@@ -1,5 +1,6 @@
 import type {
   Bridge,
+  CommandType,
   EventMessage,
   RequestMessage,
   ResponseMessage,
@@ -60,7 +61,12 @@ export function createVSCodeBridge(): Bridge {
           },
         });
 
-        const msg: RequestMessage = { type: "request", id, command, params };
+        const msg: RequestMessage = {
+          type: "request",
+          id,
+          command: command as CommandType,
+          params,
+        };
         vscode.postMessage(msg);
       });
     },

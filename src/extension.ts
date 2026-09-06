@@ -3,7 +3,6 @@ import * as vscode from "vscode";
 import { BranchDivergedError, GitService } from "./git/gitService";
 import type { DiffFile, GitLogger, LaneSnapshot } from "./git/types";
 import { MessageRouter } from "./messages/messageRouter";
-import { ErrorCode } from "./messages/protocol";
 import { CommitViewProvider } from "./views/commitViewProvider";
 import { ConflictsManager } from "./views/conflictsManager";
 import { DiffEditorManager } from "./views/diffEditorManager";
@@ -902,23 +901,20 @@ export function activate(context: vscode.ExtensionContext) {
 
     const hash = params.hash as string;
 
-    // Validate hash format (40-char hex)
+    // 校验 hash 格式（40 位十六进制）
     if (!hash || !/^[0-9a-f]{40}$/i.test(hash)) {
       return {
         success: false,
-        error: { code: ErrorCode.INVALID_REF, message: "Invalid commit hash" },
+        error: { message: "Invalid commit hash" },
       };
     }
 
-    // Check if merge commit (reject before emitting operationStart)
+    // 检查是否为 merge commit（在触发 operationStart 之前先拒绝）
     const parents = await gitService.getCommitParents(hash);
     if (parents.length > 1) {
       return {
         success: false,
-        error: {
-          code: ErrorCode.GIT_COMMAND_FAILED,
-          message: "Merge commits cannot be dropped",
-        },
+        error: { message: "Merge commits cannot be dropped" },
       };
     }
 

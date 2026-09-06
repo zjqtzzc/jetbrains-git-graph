@@ -1,3 +1,9 @@
+/**
+ * 扩展主机（src/）与 webview（webview/src/）共用的通信协议。
+ * 两边都直接导入这个文件（见 tsconfig.json / webview/tsconfig.json 的 include），
+ * 命令名、事件名等定义只有这一份来源。
+ */
+
 export interface RequestMessage {
   type: "request";
   id: string;
@@ -11,7 +17,6 @@ export interface ResponseMessage {
   success: boolean;
   data?: unknown;
   error?: {
-    code: ErrorCode;
     message: string;
   };
 }
@@ -52,6 +57,7 @@ export type CommandType =
   | "openFile"
   | "checkoutBranch"
   | "createBranch"
+  | "createBranchFromCommit"
   | "deleteBranch"
   | "renameBranch"
   | "mergeBranch"
@@ -88,6 +94,8 @@ export type CommandType =
   | "rebaseAction"
   | "mergeAction"
   | "cherryPickAction"
+  | "showErrorNotification"
+  | "showInfoNotification"
   | "openConflictsPanel"
   | "importPatchFromClipboard"
   | "createBranchPrompt"
@@ -121,17 +129,13 @@ export type EventType =
   | "commitStateChanged"
   | "rollbackPanelInit";
 
+export interface RollbackFileInfo {
+  path: string;
+  status: string;
+  staged: boolean;
+}
+
 export interface RemoteBranchGroup {
   remote: string;
   branches: string[];
-}
-
-export enum ErrorCode {
-  GIT_NOT_FOUND = "GIT_NOT_FOUND",
-  GIT_COMMAND_FAILED = "GIT_COMMAND_FAILED",
-  NOT_A_GIT_REPO = "NOT_A_GIT_REPO",
-  INVALID_REF = "INVALID_REF",
-  FILE_NOT_FOUND = "FILE_NOT_FOUND",
-  MERGE_CONFLICT = "MERGE_CONFLICT",
-  UNKNOWN = "UNKNOWN",
 }
