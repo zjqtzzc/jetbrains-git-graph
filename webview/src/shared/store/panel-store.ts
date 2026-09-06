@@ -226,26 +226,42 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
     set({ loading: true });
     const start = Date.now();
     try {
-      const { filter } = get();
-      const [graphResult, branches, tags] = await Promise.all([
-        bridge.request("getGraphData", {
-          maxCount: 200,
-          branch: filter.branch || undefined,
-          file: filter.file || undefined,
-        }) as Promise<{
-          graphData: { commits: Commit[]; lanes: Record<string, LaneInfo> };
-          snapshot: LaneSnapshot;
-        } | null>,
+      let { filter } = get();
+      const [branches, tags] = await Promise.all([
         bridge.request("getBranches") as Promise<BranchInfo[] | null>,
         bridge.request("getTags") as Promise<TagInfo[] | null>,
       ]);
 
-      const commits = graphResult?.graphData?.commits ?? [];
-      const lanes = graphResult?.graphData?.lanes ?? {};
-      const snapshot = graphResult?.snapshot ?? null;
       const branchList = branches ?? [];
       const tagList = tags ?? [];
       const current = branchList.find((b) => b.isCurrent)?.name ?? "";
+
+      // The filtered branch may have been deleted (e.g. externally, or by
+      // this branch's own delete action) between the last fetch and now.
+      // Fetching the graph with a stale/nonexistent branch name would throw
+      // and abort this whole refresh, leaving `branches` stale in the UI.
+      if (filter.branch && !branchList.some((b) => b.name === filter.branch)) {
+        filter = { ...filter, branch: "" };
+        set({ filter });
+      }
+
+      // Prune any highlighted branch selection that no longer exists.
+      const prunedSelectedBranches = get().selectedBranches.filter((name) =>
+        branchList.some((b) => b.name === name),
+      );
+
+      const graphResult = (await bridge.request("getGraphData", {
+        maxCount: 200,
+        branch: filter.branch || undefined,
+        file: filter.file || undefined,
+      })) as {
+        graphData: { commits: Commit[]; lanes: Record<string, LaneInfo> };
+        snapshot: LaneSnapshot;
+      } | null;
+
+      const commits = graphResult?.graphData?.commits ?? [];
+      const lanes = graphResult?.graphData?.lanes ?? {};
+      const snapshot = graphResult?.snapshot ?? null;
 
       const { pendingSelectionFromFilter, collapsedIntermediates } = get();
 
@@ -263,6 +279,7 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
             graphLayout: lanes,
             laneSnapshot: snapshot,
             branches: branchList,
+            selectedBranches: prunedSelectedBranches,
             tags: tagList,
             currentBranch: current,
 
@@ -292,6 +309,7 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
         graphLayout: lanes,
         laneSnapshot: snapshot,
         branches: branchList,
+        selectedBranches: prunedSelectedBranches,
         tags: tagList,
         currentBranch: current,
 
