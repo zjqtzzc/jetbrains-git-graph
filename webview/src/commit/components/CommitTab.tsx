@@ -367,6 +367,9 @@ function FileGroup({
   return (
     <div className="commit-group">
       <div className="commit-group-header" onClick={onToggle}>
+        <span className={`commit-group-chevron ${expanded ? "" : "collapsed"}`}>
+          <ChevronIcon />
+        </span>
         <input
           type="checkbox"
           className="commit-group-checkbox"
@@ -380,9 +383,6 @@ function FileGroup({
           }}
           onClick={(e) => e.stopPropagation()}
         />
-        <span className={`commit-group-chevron ${expanded ? "" : "collapsed"}`}>
-          <ChevronIcon />
-        </span>
         {label}
         <span className="commit-group-count">
           {count} {count === 1 ? "file" : "files"}
@@ -651,7 +651,7 @@ function DirNodeView({
       {node.files.map((file) => {
         const key = `${file.path}:${file.staged}`;
         return (
-          <div key={key} style={{ paddingLeft: `${(depth + 1) * 16}px` }}>
+          <div key={key} style={{ paddingLeft: `${24 + depth * 16}px` }}>
             <FileItem
               file={{ ...file, path: file.path.split("/").pop() || file.path }}
               selected={selectedFiles.has(key)}

@@ -249,7 +249,7 @@
 .commit-file-item {
   display: flex;
   align-items: center;
-  padding: 3px 8px 3px 28px;
+  padding: 3px 8px;
   cursor: pointer;
   font-size: 12px;
   gap: 4px;
