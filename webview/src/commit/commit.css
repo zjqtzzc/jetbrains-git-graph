@@ -3,8 +3,8 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  font-family: var(--vscode-font-family);
-  font-size: var(--vscode-font-size);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
   color: var(--vscode-foreground);
   background: var(--vscode-sideBar-background);
 }
@@ -78,7 +78,7 @@
   background: transparent;
   color: var(--vscode-foreground);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size);
   font-weight: 500;
   opacity: 0.7;
   border-radius: 6px;
@@ -169,7 +169,7 @@
   align-items: center;
   padding: 3px 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size);
   gap: 4px;
   min-height: 26px;
   user-select: none;
@@ -251,7 +251,7 @@
   align-items: center;
   padding: 3px 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size);
   gap: 4px;
   min-height: 26px;
   box-sizing: border-box;
@@ -322,7 +322,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   min-width: 200px;
   padding: 4px 0;
-  font-size: 12px;
+  font-size: var(--font-size);
 }
 
 .commit-context-menu-item {
@@ -334,7 +334,7 @@
   border: none;
   background: transparent;
   color: var(--vscode-menu-foreground, var(--vscode-foreground));
-  font-size: 12px;
+  font-size: var(--font-size);
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
@@ -396,8 +396,8 @@
     var(--vscode-input-border, var(--vscode-panel-border, #3c3c3c));
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
-  font-family: var(--vscode-font-family);
-  font-size: 12px;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
   padding: 6px 8px;
   border-radius: 6px;
   outline: none;
@@ -416,7 +416,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-size);
 }
 
 .commit-amend-row label {
@@ -436,7 +436,7 @@
   padding: 6px 16px;
   border: none;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--font-size);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
@@ -483,7 +483,7 @@
   padding: 20px;
   text-align: center;
   opacity: 0.6;
-  font-size: 12px;
+  font-size: var(--font-size);
 }
 
 .shelf-item-container {
@@ -520,7 +520,7 @@
 }
 
 .shelf-item-title {
-  font-size: 12px;
+  font-size: var(--font-size);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -544,7 +544,7 @@
   align-items: center;
   padding: 2px 8px 2px 32px;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--font-size);
   min-height: 24px;
 }
 
@@ -627,7 +627,7 @@
   border: none;
   background: none;
   color: var(--vscode-menu-foreground, var(--vscode-foreground));
-  font-size: 12px;
+  font-size: var(--font-size);
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
@@ -733,7 +733,7 @@ button.commit-dropdown-item:hover:not(:disabled) {
   text-decoration: underline;
   cursor: pointer;
   font-weight: 500;
-  font-size: 12px;
+  font-size: var(--font-size);
 }
 
 .commit-group-resolve-link:hover {
