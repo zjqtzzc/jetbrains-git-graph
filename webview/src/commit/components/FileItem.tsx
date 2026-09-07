@@ -1,5 +1,5 @@
+import { getFileIcon } from "../../panel/utils/file-icons";
 import type { WorkingTreeFile } from "../../shared/store/commit-store";
-import { getCommitFileIcon } from "../utils/file-icon";
 
 export interface FileItemProps {
   file: WorkingTreeFile;
@@ -26,7 +26,7 @@ export function FileItem({
 
   const statusLabel = getStatusLabel(file.status);
   const statusColor = getStatusColor(file.status);
-  const FileIcon = getCommitFileIcon(file.path);
+  const FileIcon = getFileIcon(file.path);
 
   return (
     <div

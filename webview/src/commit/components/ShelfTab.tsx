@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { getFileIcon } from "../../panel/utils/file-icons";
 import {
   type ShelveEntry,
   useCommitStore,
 } from "../../shared/store/commit-store";
-import { getCommitFileIcon } from "../utils/file-icon";
 import { ShelfContextMenu } from "./ShelfContextMenu";
 import { ShelfFileContextMenu } from "./ShelfFileContextMenu";
 
@@ -172,7 +172,7 @@ function ShelfFileRow({
   const parts = filePath.split("/");
   const fileName = parts.pop() || filePath;
   const dirPath = parts.length > 0 ? parts.join("/") : "";
-  const FileIcon = getCommitFileIcon(filePath);
+  const FileIcon = getFileIcon(filePath);
 
   return (
     <div

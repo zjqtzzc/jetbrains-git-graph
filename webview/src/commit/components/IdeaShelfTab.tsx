@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { getFileIcon } from "../../panel/utils/file-icons";
 import {
   type IdeaShelfEntry,
   useCommitStore,
 } from "../../shared/store/commit-store";
-import { getCommitFileIcon } from "../utils/file-icon";
 import { IdeaShelfContextMenu } from "./IdeaShelfContextMenu";
 import { IdeaShelfFileContextMenu } from "./IdeaShelfFileContextMenu";
 
@@ -206,7 +206,7 @@ function IdeaShelfFileRow({
   const parts = filePath.split("/");
   const fileName = parts.pop() || filePath;
   const dirPath = parts.length > 0 ? parts.join("/") : "";
-  const FileIcon = getCommitFileIcon(filePath);
+  const FileIcon = getFileIcon(filePath);
 
   return (
     <div

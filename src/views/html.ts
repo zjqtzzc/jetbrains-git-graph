@@ -31,7 +31,7 @@ export function getWebviewHtml(
     default-src 'none';
     style-src ${webview.cspSource} 'unsafe-inline';
     script-src 'nonce-${nonce}';
-    font-src ${webview.cspSource};
+    font-src ${webview.cspSource} data:;
     img-src ${webview.cspSource} data:;
   ">
   <link rel="stylesheet" href="${styleUri}">
