@@ -717,7 +717,10 @@ export function BranchTree({
                     force,
                   });
                 } catch (err) {
-                  console.error("Push failed:", err);
+                  const msg = err instanceof Error ? err.message : String(err);
+                  bridge
+                    .request("showErrorNotification", { message: msg })
+                    .catch(() => {});
                 }
               }}
             />,
