@@ -1,5 +1,6 @@
 import { getFileIcon } from "../../panel/utils/file-icons";
 import type { WorkingTreeFile } from "../../shared/store/commit-store";
+import { TreeRow } from "./TreeRow";
 
 export interface FileItemProps {
   file: WorkingTreeFile;
@@ -9,6 +10,10 @@ export interface FileItemProps {
   onContextMenu: (e: React.MouseEvent) => void;
   onShowDiff: () => void;
   onClick: (e: React.MouseEvent) => void;
+  /** 在目录树中的层级，非目录树模式下忽略 */
+  depth?: number;
+  /** 在 checkbox 前占一个和 chevron 等宽的空位，让本行和同层文件夹行对齐 */
+  showIndentSlot?: boolean;
 }
 
 export function FileItem({
@@ -19,6 +24,8 @@ export function FileItem({
   onContextMenu,
   onShowDiff,
   onClick,
+  depth = 0,
+  showIndentSlot = false,
 }: FileItemProps) {
   const parts = file.path.split("/");
   const fileName = parts.pop() || parts.pop() || file.path;
@@ -29,41 +36,36 @@ export function FileItem({
   const FileIcon = getFileIcon(file.path);
 
   return (
-    <div
-      className={`commit-file-item ${highlighted ? "highlighted" : ""}`}
-      onDoubleClick={onShowDiff}
+    <TreeRow
+      depth={depth}
+      chevron={showIndentSlot ? "spacer" : undefined}
+      checkbox={{ checked: selected, onChange: onToggle }}
+      icon={<FileIcon style={{ width: 16, height: 16 }} />}
+      label={fileName}
+      labelTitle={file.path}
+      labelColor={statusColor}
+      labelGrow
+      highlighted={highlighted}
+      trailingContent={
+        <>
+          {dirPath && (
+            <span className="commit-file-path" title={dirPath}>
+              {dirPath}
+            </span>
+          )}
+          <span className="commit-file-status" style={{ color: statusColor }}>
+            {statusLabel}
+          </span>
+        </>
+      }
       onClick={onClick}
+      onDoubleClick={onShowDiff}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onContextMenu(e);
       }}
-    >
-      <input
-        type="checkbox"
-        className="commit-file-checkbox"
-        checked={selected}
-        onChange={onToggle}
-      />
-      <span className="commit-file-icon">
-        <FileIcon style={{ width: 16, height: 16 }} />
-      </span>
-      <span
-        className="commit-file-name"
-        title={file.path}
-        style={{ color: statusColor }}
-      >
-        {fileName}
-      </span>
-      {dirPath && (
-        <span className="commit-file-path" title={dirPath}>
-          {dirPath}
-        </span>
-      )}
-      <span className="commit-file-status" style={{ color: statusColor }}>
-        {statusLabel}
-      </span>
-    </div>
+    />
   );
 }
 

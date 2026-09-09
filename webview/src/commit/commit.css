@@ -164,89 +164,10 @@
   overflow-x: hidden;
 }
 
-.commit-dir-row {
-  display: flex;
-  align-items: center;
-  padding: 3px 8px;
-  cursor: pointer;
-  font-size: var(--font-size);
-  gap: 4px;
-  min-height: 26px;
-  user-select: none;
-  opacity: 0.85;
-}
-
-.commit-dir-row:hover {
-  background: var(--vscode-list-hoverBackground);
-}
-
-.commit-dir-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.commit-dir-count {
-  margin-left: 6px;
-  font-size: 11px;
-  opacity: 0.5;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.commit-group-header {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: var(--vscode-foreground);
-  opacity: 0.85;
-}
-
-.commit-group-header:hover {
-  background: var(--vscode-list-hoverBackground);
-}
-
-.commit-group-chevron {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 4px;
-  transition: transform 0.15s;
-  transform: rotate(90deg);
-}
-
-.commit-group-chevron.collapsed {
-  transform: rotate(0deg);
-}
-
-.commit-group-count {
-  margin-left: 6px;
-  opacity: 0.6;
-  font-weight: 400;
-}
-
-.commit-group-checkbox {
-  margin-right: 6px;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.commit-group-checkbox:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-/* ─── File Item ────────────────────────────────────────────────── */
-.commit-file-item {
+/* ─── Tree Row ─────────────────────────────────────────────────────
+   分组标题、文件夹、文件三种行共用这一套：TreeRow 组件统一渲染，样式也统一
+   在这一处声明，不再按行的种类各写一遍 */
+.commit-tree-row {
   display: flex;
   align-items: center;
   padding: 3px 8px;
@@ -255,31 +176,50 @@
   gap: 4px;
   min-height: 26px;
   box-sizing: border-box;
+  user-select: none;
 }
 
-.commit-file-item:hover {
+.commit-tree-row:hover {
   background: var(--vscode-list-hoverBackground);
 }
 
-.commit-file-item.highlighted {
+/* 目录/分组行比文件行暗一档，跟原来的视觉保持一致 */
+.commit-tree-row.dimmed {
+  opacity: 0.85;
+}
+
+.commit-tree-row.highlighted {
   background: var(--vscode-list-activeSelectionBackground);
   color: var(--vscode-list-activeSelectionForeground);
 }
 
-.commit-file-checkbox {
+.commit-tree-chevron {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+  transform: rotate(90deg);
+}
+
+.commit-tree-chevron.collapsed {
+  transform: rotate(0deg);
+}
+
+.commit-tree-checkbox {
   flex-shrink: 0;
-  margin-right: 4px;
   width: 16px;
   height: 16px;
   cursor: pointer;
 }
 
-.commit-file-checkbox:focus {
+.commit-tree-checkbox:focus {
   outline: none;
   box-shadow: none;
 }
 
-.commit-file-icon {
+.commit-tree-icon {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
@@ -288,11 +228,36 @@
   justify-content: center;
 }
 
-.commit-file-name {
-  flex: 1;
+.commit-tree-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 文件行需要撑满剩余空间，状态角标才能贴到最右边；目录/分组行的计数紧跟在
+   名字后面就够了，不需要撑满 */
+.commit-tree-label.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.commit-tree-label.bold {
+  font-weight: 600;
+}
+
+/* 只包在 label 这个 span 上，不会像以前那样连带把外层容器里的 "x files" 也
+   一起变成大写 */
+.commit-tree-label.uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.commit-tree-count {
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.55;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .commit-file-path {
