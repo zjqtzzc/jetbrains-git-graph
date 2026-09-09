@@ -265,17 +265,23 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
     const { commitMessage, amend, changes, selectedFiles } = get();
     if (!commitMessage.trim()) return false;
 
-    // Get selected file paths (only unstaged ones need to be staged)
-    const filesToStage = changes
-      .filter((f) => !f.staged && selectedFiles.has(`${f.path}:${f.staged}`))
-      .map((f) => f.path);
+    // 提交只看路径，不看暂存与否：一个部分暂存的文件在 changes 里有两条
+    // 记录（同一个 path，一条 staged:true 一条 staged:false），只要有一条
+    // 被勾选就要把这个路径带上，去重后传给后端做 pathspec 限定提交
+    const filePaths = [
+      ...new Set(
+        changes
+          .filter((f) => selectedFiles.has(`${f.path}:${f.staged}`))
+          .map((f) => f.path),
+      ),
+    ];
 
     try {
       set({ loading: true });
       await bridge.request("commitChanges", {
         message: commitMessage,
         amend,
-        filePaths: filesToStage,
+        filePaths,
       });
       set({ commitMessage: "", amend: false });
       await get().fetchChanges();

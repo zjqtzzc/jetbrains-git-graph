@@ -463,6 +463,15 @@ export class GitService {
     return statusOps.commit(this.ctx, message, amend);
   }
 
+  /** 只提交指定路径的当前内容，不影响 index 里其他文件。 */
+  commitFiles(
+    message: string,
+    filePaths: string[],
+    amend?: boolean,
+  ): Promise<void> {
+    return statusOps.commitFiles(this.ctx, message, filePaths, amend);
+  }
+
   /** 撤销单个文件的所有改动。 */
   rollbackFile(filePath: string): Promise<void> {
     return statusOps.rollbackFile(this.ctx, filePath);

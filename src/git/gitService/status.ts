@@ -149,6 +149,29 @@ export async function commit(
   ctx.invalidateCache();
 }
 
+/**
+ * 只提交指定路径的当前工作区内容（`amend` 为 true 时修补上一次提交），
+ * 不管这些路径之前处于未暂存/已暂存/部分暂存哪种中间状态，也不管 index
+ * 里还有没有别的、不在 filePaths 里的文件——那些文件不受影响、不会被
+ * 一并提交。`git add` 先同步这几个路径的当前内容进 index（新文件也靠这
+ * 一步被跟踪），commit 命令自己再带上同样的路径参数（pathspec），保证
+ * 最终提交只包含这几个路径。
+ */
+export async function commitFiles(
+  ctx: GitContext,
+  message: string,
+  filePaths: string[],
+  amend = false,
+): Promise<void> {
+  if (filePaths.length === 0) return;
+  await ctx.execGit(["add", "--", ...filePaths]);
+  const args = ["commit", "-m", message];
+  if (amend) args.push("--amend");
+  args.push("--", ...filePaths);
+  await ctx.execGit(args);
+  ctx.invalidateCache();
+}
+
 /** 撤销单个文件的所有改动：HEAD 中存在则恢复为 HEAD 版本，否则视为新文件直接删除。 */
 export async function rollbackFile(
   ctx: GitContext,

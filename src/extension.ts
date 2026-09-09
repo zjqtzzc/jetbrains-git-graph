@@ -1018,14 +1018,9 @@ export function activate(context: vscode.ExtensionContext) {
     if (!gitService) return NOT_GIT_REPO;
     const message = params.message as string;
     const amend = params.amend as boolean | undefined;
-    const filePaths = params.filePaths as string[] | undefined;
+    const filePaths = (params.filePaths as string[] | undefined) ?? [];
 
-    // Stage specified files if provided
-    if (filePaths && filePaths.length > 0) {
-      await gitService.stageFiles(filePaths);
-    }
-
-    await gitService.commit(message, amend ?? false);
+    await gitService.commitFiles(message, filePaths, amend ?? false);
     messageRouter.broadcastEvent("commitStateChanged", {});
     messageRouter.broadcastEvent("gitStateChanged", {});
     return { success: true };
