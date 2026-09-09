@@ -37,7 +37,7 @@ webview/                Webview 前端 (React 19 + Vite)
 - 自研图形布局算法（贪心车道分配 + LaneSnapshot）
 - 三方合并使用 node-diff3，二方 diff 使用 diff 库
 - 所有 Webview 共用单一 MessageRouter 架构
-- Bridge 协议需在 `webview/src/shared/bridge/types.ts` 与 `src/messages/protocol.ts` 之间保持同步
+- Bridge 协议需在 `webview/src/shared/bridge/types.ts` 与 `shared/protocol.ts` 之间保持同步
 
 ### 版本锁定
 

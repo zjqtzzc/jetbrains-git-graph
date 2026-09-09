@@ -37,9 +37,10 @@ export async function getStatus(ctx: GitContext): Promise<FileStatus[]> {
 }
 
 /**
- * 获取提交面板所需的工作区改动列表（含未跟踪文件），并归类为
- * added/modified/deleted/renamed/untracked/conflicted 等状态；
- * 同一文件既有暂存又有未暂存改动时会拆分为两条记录分别展示。
+ * 获取提交面板所需的工作区改动列表（含未跟踪文件），归类为
+ * added/modified/deleted/renamed/untracked/conflicted 等状态。不区分
+ * 暂存区/工作区：一个路径无论是否被 add 过、add 了多少，只出现一条记录，
+ * status 取的是 index 状态和工作区状态合并后的结果。
  */
 export async function getWorkingTreeChanges(
   ctx: GitContext,
@@ -62,10 +63,6 @@ export async function getWorkingTreeChanges(
     const filePath = arrowIdx !== -1 ? rest.substring(arrowIdx + 4) : rest;
     const oldPath = arrowIdx !== -1 ? rest.substring(0, arrowIdx) : undefined;
 
-    // Determine if file is staged
-    const staged =
-      indexStatus !== " " && indexStatus !== "?" && indexStatus !== "!";
-
     // Determine status
     let status: WorkingTreeFile["status"];
     if (indexStatus === "?" && workTreeStatus === "?") {
@@ -87,54 +84,9 @@ export async function getWorkingTreeChanges(
       status = "modified";
     }
 
-    // For files that have both staged and unstaged changes, emit two entries
-    if (
-      staged &&
-      workTreeStatus !== " " &&
-      workTreeStatus !== "?" &&
-      workTreeStatus !== "!"
-    ) {
-      // Staged version
-      files.push({ path: filePath, oldPath, status, staged: true });
-      // Unstaged version
-      files.push({
-        path: filePath,
-        oldPath,
-        status: "modified",
-        staged: false,
-      });
-    } else {
-      files.push({ path: filePath, oldPath, status, staged });
-    }
+    files.push({ path: filePath, oldPath, status });
   }
   return files;
-}
-
-/** 将指定文件加入暂存区。 */
-export async function stageFiles(
-  ctx: GitContext,
-  filePaths: string[],
-): Promise<void> {
-  if (filePaths.length === 0) return;
-  await ctx.execGit(["add", "--", ...filePaths]);
-}
-
-/** 将指定文件从暂存区移除（不影响工作区内容）。 */
-export async function unstageFile(
-  ctx: GitContext,
-  filePath: string,
-): Promise<void> {
-  await ctx.execGit(["reset", "HEAD", "--", filePath]);
-}
-
-/** 取消暂存所有文件。 */
-export async function unstageAll(ctx: GitContext): Promise<void> {
-  await ctx.execGit(["reset", "HEAD"]);
-}
-
-/** 将所有改动（含未跟踪文件）加入暂存区。 */
-export async function stageAll(ctx: GitContext): Promise<void> {
-  await ctx.execGit(["add", "-A"]);
 }
 
 /** 提交暂存区的改动，`amend` 为 true 时修补上一次提交。 */

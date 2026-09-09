@@ -147,7 +147,6 @@ export interface WorkingTreeFile {
     | "renamed"
     | "untracked"
     | "conflicted";
-  staged: boolean;
 }
 
 /** Shelf entry (git stash based) */

@@ -11,7 +11,6 @@ export interface WorkingTreeFile {
     | "renamed"
     | "untracked"
     | "conflicted";
-  staged: boolean;
 }
 
 export interface ShelveEntry {
@@ -69,12 +68,9 @@ interface CommitStore {
   deselectAllFiles: () => void;
   highlightFile: (key: string, mode: "single" | "toggle") => void;
   stageFile: (filePath: string) => Promise<void>;
-  unstageFile: (filePath: string) => Promise<void>;
-  stageAll: () => Promise<void>;
-  unstageAll: () => Promise<void>;
   commit: () => Promise<boolean>;
   rollbackFile: (filePath: string) => Promise<void>;
-  showDiff: (filePath: string, staged?: boolean) => Promise<void>;
+  showDiff: (filePath: string) => Promise<void>;
   shelveChanges: (message?: string, filePaths?: string[]) => Promise<void>;
   unshelveChanges: (stashId: string, drop?: boolean) => Promise<void>;
   deleteShelve: (stashId: string) => Promise<void>;
@@ -102,7 +98,7 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
   ideaShelves: [],
   activeTab: "commit",
   loading: false,
-  expandedGroups: new Set(["changes", "unversioned", "staged"]),
+  expandedGroups: new Set(["changes", "unversioned"]),
   groupByDirectory: true,
   showUnversioned: true,
   collapsedDirs: new Set<string>(),
@@ -115,7 +111,7 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
         "getWorkingTreeChanges",
       )) as WorkingTreeFile[];
       if (Array.isArray(result)) {
-        const newPaths = new Set(result.map((f) => `${f.path}:${f.staged}`));
+        const newPaths = new Set(result.map((f) => f.path));
         const { selectedFiles, changes } = get();
         if (changes.length === 0) {
           // First load — no auto-selection (user manually selects files)
@@ -201,7 +197,7 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
 
   selectAllFiles() {
     const { changes } = get();
-    const allPaths = new Set(changes.map((f) => `${f.path}:${f.staged}`));
+    const allPaths = new Set(changes.map((f) => f.path));
     set({ selectedFiles: allPaths });
   },
 
@@ -234,47 +230,13 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
     }
   },
 
-  async unstageFile(filePath: string) {
-    try {
-      await bridge.request("unstageFile", { filePath });
-      await get().fetchChanges();
-    } catch (err) {
-      console.error("unstageFile failed:", err);
-    }
-  },
-
-  async stageAll() {
-    try {
-      await bridge.request("stageAll");
-      await get().fetchChanges();
-    } catch (err) {
-      console.error("stageAll failed:", err);
-    }
-  },
-
-  async unstageAll() {
-    try {
-      await bridge.request("unstageAll");
-      await get().fetchChanges();
-    } catch (err) {
-      console.error("unstageAll failed:", err);
-    }
-  },
-
   async commit() {
     const { commitMessage, amend, changes, selectedFiles } = get();
     if (!commitMessage.trim()) return false;
 
-    // 提交只看路径，不看暂存与否：一个部分暂存的文件在 changes 里有两条
-    // 记录（同一个 path，一条 staged:true 一条 staged:false），只要有一条
-    // 被勾选就要把这个路径带上，去重后传给后端做 pathspec 限定提交
-    const filePaths = [
-      ...new Set(
-        changes
-          .filter((f) => selectedFiles.has(`${f.path}:${f.staged}`))
-          .map((f) => f.path),
-      ),
-    ];
+    const filePaths = changes
+      .filter((f) => selectedFiles.has(f.path))
+      .map((f) => f.path);
 
     try {
       set({ loading: true });
@@ -303,9 +265,9 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
     }
   },
 
-  async showDiff(filePath: string, staged?: boolean) {
+  async showDiff(filePath: string) {
     try {
-      await bridge.request("showDiffForWorkingFile", { filePath, staged });
+      await bridge.request("showDiffForWorkingFile", { filePath });
     } catch (err) {
       console.error("showDiff failed:", err);
     }

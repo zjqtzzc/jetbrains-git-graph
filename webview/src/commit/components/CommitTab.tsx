@@ -46,36 +46,31 @@ export function CommitTab() {
     dirName: string;
   } | null>(null);
 
-  // Group files: staged (Changes) vs unstaged/untracked (Unversioned Files)
-  const { stagedFiles, changedFiles, untrackedFiles, conflictedFiles } =
-    useMemo(() => {
-      const staged: WorkingTreeFile[] = [];
-      const changed: WorkingTreeFile[] = [];
-      const untracked: WorkingTreeFile[] = [];
-      const conflicted: WorkingTreeFile[] = [];
+  // Group files: Changes (tracked, modified) vs Unversioned Files (untracked)
+  const { changedFiles, untrackedFiles, conflictedFiles } = useMemo(() => {
+    const changed: WorkingTreeFile[] = [];
+    const untracked: WorkingTreeFile[] = [];
+    const conflicted: WorkingTreeFile[] = [];
 
-      for (const file of changes) {
-        if (file.status === "conflicted") {
-          conflicted.push(file);
-        } else if (file.staged) {
-          staged.push(file);
-        } else if (file.status === "untracked") {
-          untracked.push(file);
-        } else {
-          changed.push(file);
-        }
+    for (const file of changes) {
+      if (file.status === "conflicted") {
+        conflicted.push(file);
+      } else if (file.status === "untracked") {
+        untracked.push(file);
+      } else {
+        changed.push(file);
       }
-      return {
-        stagedFiles: staged,
-        changedFiles: changed,
-        untrackedFiles: untracked,
-        conflictedFiles: conflicted,
-      };
-    }, [changes]);
+    }
+    return {
+      changedFiles: changed,
+      untrackedFiles: untracked,
+      conflictedFiles: conflicted,
+    };
+  }, [changes]);
 
   const handleShelveSelected = useCallback(async () => {
     const selectedPaths = changes
-      .filter((f) => selectedFiles.has(`${f.path}:${f.staged}`))
+      .filter((f) => selectedFiles.has(f.path))
       .map((f) => f.path);
     if (selectedPaths.length === 0) return;
     await ideaShelveChanges("Shelved changes", [...new Set(selectedPaths)]);
@@ -121,8 +116,8 @@ export function CommitTab() {
         onRollback={() => {
           // Use highlighted files (click/focus selection), not checkbox selection
           const highlightedPaths = changes
-            .filter((f) => highlightedFiles.has(`${f.path}:${f.staged}`))
-            .map((f) => ({ path: f.path, status: f.status, staged: f.staged }));
+            .filter((f) => highlightedFiles.has(f.path))
+            .map((f) => ({ path: f.path, status: f.status }));
 
           if (highlightedPaths.length > 0) {
             bridge.request("openRollbackPanel", { files: highlightedPaths });
@@ -131,7 +126,6 @@ export function CommitTab() {
             const allFiles = changes.map((f) => ({
               path: f.path,
               status: f.status,
-              staged: f.staged,
             }));
             bridge.request("openRollbackPanel", { files: allFiles });
           }
@@ -181,25 +175,6 @@ export function CommitTab() {
             expanded={expandedGroups.has("changes")}
             groupByDirectory={groupByDirectory}
             onToggle={() => toggleGroup("changes")}
-            selectedFiles={selectedFiles}
-            highlightedFiles={highlightedFiles}
-            onToggleFile={toggleFileSelection}
-            onSetFileKeys={setFileKeys}
-            onHighlightFile={highlightFile}
-            onShowDiff={showDiff}
-            onContextMenu={handleContextMenu}
-            onDirContextMenu={handleDirContextMenu}
-          />
-        )}
-
-        {/* Staged files */}
-        {stagedFiles.length > 0 && (
-          <FileGroup
-            label="Staged"
-            files={stagedFiles}
-            expanded={expandedGroups.has("staged")}
-            groupByDirectory={groupByDirectory}
-            onToggle={() => toggleGroup("staged")}
             selectedFiles={selectedFiles}
             highlightedFiles={highlightedFiles}
             onToggleFile={toggleFileSelection}
@@ -269,7 +244,7 @@ interface FileGroupProps {
   onToggleFile: (key: string) => void;
   onSetFileKeys: (keys: string[], selected: boolean) => void;
   onHighlightFile: (key: string, mode: "single" | "toggle") => void;
-  onShowDiff: (path: string, staged?: boolean) => Promise<void>;
+  onShowDiff: (path: string) => Promise<void>;
   onContextMenu: (e: React.MouseEvent, file: WorkingTreeFile) => void;
   onDirContextMenu: (
     e: React.MouseEvent,
@@ -309,7 +284,7 @@ function FileGroup({
     () =>
       items
         .filter((item) => item.kind === "file")
-        .map((item) => `${item.file.path}:${item.file.staged}`),
+        .map((item) => item.file.path),
     [items],
   );
 
@@ -387,7 +362,7 @@ function FileGroup({
         }
 
         const { file, depth } = item;
-        const key = `${file.path}:${file.staged}`;
+        const key = file.path;
         // 按目录分组时，目录嵌套已经表达了路径，行内只显示文件名；扁平模式下
         // 还是要看到完整相对路径（原来的行为）
         const displayFile = groupByDirectory
@@ -403,7 +378,7 @@ function FileGroup({
             selected={selectedFiles.has(key)}
             highlighted={highlightedFiles.has(key)}
             onToggle={() => onToggleFile(key)}
-            onShowDiff={() => onShowDiff(file.path, file.staged)}
+            onShowDiff={() => onShowDiff(file.path)}
             onContextMenu={(e) => onContextMenu(e, file)}
             onClick={(e) => {
               const mode = e.metaKey || e.ctrlKey ? "toggle" : "single";

@@ -47,9 +47,6 @@ export type CommandType =
   | "getFileVersions"
   | "saveMergedContent"
   | "stageFile"
-  | "unstageFile"
-  | "stageAll"
-  | "unstageAll"
   | "acceptOurs"
   | "acceptTheirs"
   | "confirmCancelMerge"
@@ -131,7 +128,6 @@ export type EventType =
 export interface RollbackFileInfo {
   path: string;
   status: string;
-  staged: boolean;
 }
 
 export interface RemoteBranchGroup {

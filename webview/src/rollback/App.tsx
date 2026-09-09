@@ -9,7 +9,6 @@ import "./rollback.css";
 interface RollbackFileInfo {
   path: string;
   status: string;
-  staged: boolean;
 }
 
 /**

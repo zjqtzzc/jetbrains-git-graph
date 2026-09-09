@@ -993,27 +993,6 @@ export function activate(context: vscode.ExtensionContext) {
     return allChanges;
   });
 
-  messageRouter.handle("unstageFile", async (params) => {
-    if (!gitService) return NOT_GIT_REPO;
-    await gitService.unstageFile(params.filePath as string);
-    messageRouter.broadcastEvent("commitStateChanged", {});
-    return { success: true };
-  });
-
-  messageRouter.handle("stageAll", async () => {
-    if (!gitService) return NOT_GIT_REPO;
-    await gitService.stageAll();
-    messageRouter.broadcastEvent("commitStateChanged", {});
-    return { success: true };
-  });
-
-  messageRouter.handle("unstageAll", async () => {
-    if (!gitService) return NOT_GIT_REPO;
-    await gitService.unstageAll();
-    messageRouter.broadcastEvent("commitStateChanged", {});
-    return { success: true };
-  });
-
   messageRouter.handle("commitChanges", async (params) => {
     if (!gitService) return NOT_GIT_REPO;
     const message = params.message as string;
@@ -1132,36 +1111,20 @@ export function activate(context: vscode.ExtensionContext) {
   messageRouter.handle("showDiffForWorkingFile", async (params) => {
     if (!gitService || !workspaceRoot) return NOT_GIT_REPO;
     const filePath = params.filePath as string;
-    const staged = params.staged as boolean | undefined;
 
     const rightUri = vscode.Uri.joinPath(
       vscode.Uri.file(workspaceRoot),
       filePath,
     );
-
-    if (staged) {
-      // Show diff between HEAD and staged
-      const leftUri = vscode.Uri.parse(
-        `${GIT_BRAINS_SCHEME}:/${filePath}?ref=HEAD`,
-      );
-      await vscode.commands.executeCommand(
-        "vscode.diff",
-        leftUri,
-        rightUri,
-        `${filePath} (HEAD ↔ Staged)`,
-      );
-    } else {
-      // Show diff between HEAD and working tree
-      const leftUri = vscode.Uri.parse(
-        `${GIT_BRAINS_SCHEME}:/${filePath}?ref=HEAD`,
-      );
-      await vscode.commands.executeCommand(
-        "vscode.diff",
-        leftUri,
-        rightUri,
-        `${filePath} (HEAD ↔ Working Tree)`,
-      );
-    }
+    const leftUri = vscode.Uri.parse(
+      `${GIT_BRAINS_SCHEME}:/${filePath}?ref=HEAD`,
+    );
+    await vscode.commands.executeCommand(
+      "vscode.diff",
+      leftUri,
+      rightUri,
+      `${filePath} (HEAD ↔ Working Tree)`,
+    );
     return { success: true };
   });
 

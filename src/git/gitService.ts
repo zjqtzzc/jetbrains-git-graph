@@ -438,26 +438,6 @@ export class GitService {
     return statusOps.getWorkingTreeChanges(this.ctx);
   }
 
-  /** 将指定文件加入暂存区。 */
-  stageFiles(filePaths: string[]): Promise<void> {
-    return statusOps.stageFiles(this.ctx, filePaths);
-  }
-
-  /** 将指定文件从暂存区移除。 */
-  unstageFile(filePath: string): Promise<void> {
-    return statusOps.unstageFile(this.ctx, filePath);
-  }
-
-  /** 取消暂存所有文件。 */
-  unstageAll(): Promise<void> {
-    return statusOps.unstageAll(this.ctx);
-  }
-
-  /** 将所有改动加入暂存区。 */
-  stageAll(): Promise<void> {
-    return statusOps.stageAll(this.ctx);
-  }
-
   /** 提交暂存区的改动。 */
   commit(message: string, amend?: boolean): Promise<void> {
     return statusOps.commit(this.ctx, message, amend);

@@ -88,7 +88,7 @@ export function countFiles(node: DirNode): number {
 export function collectFileKeys(node: DirNode): string[] {
   const keys: string[] = [];
   for (const file of node.files) {
-    keys.push(`${file.path}:${file.staged}`);
+    keys.push(file.path);
   }
   for (const child of node.children) {
     keys.push(...collectFileKeys(child));

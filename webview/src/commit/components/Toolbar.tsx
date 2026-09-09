@@ -22,7 +22,7 @@ export function Toolbar({
 
   const handleExpandAll = useCallback(() => {
     // Expand file groups
-    const groups = ["changes", "staged", "unversioned"];
+    const groups = ["changes", "unversioned"];
     for (const g of groups) {
       if (!expandedGroups.has(g)) {
         toggleGroup(g);
@@ -34,7 +34,7 @@ export function Toolbar({
 
   const handleCollapseAll = useCallback(() => {
     // Collapse file groups
-    const groups = ["changes", "staged", "unversioned"];
+    const groups = ["changes", "unversioned"];
     for (const g of groups) {
       if (expandedGroups.has(g)) {
         toggleGroup(g);
