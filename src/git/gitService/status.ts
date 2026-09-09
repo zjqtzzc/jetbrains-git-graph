@@ -1,9 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type { FileStatus, WorkingTreeFile } from "../types";
-import { getCurrentBranch } from "./branches";
 import type { GitContext } from "./context";
-import { push } from "./remote";
 
 /** 获取工作区文件状态列表（`git status --porcelain=v1`），含重命名识别。 */
 export async function getStatus(ctx: GitContext): Promise<FileStatus[]> {
@@ -149,21 +147,6 @@ export async function commit(
   if (amend) args.push("--amend");
   await ctx.execGit(args);
   ctx.invalidateCache();
-}
-
-/** 提交后立即推送当前分支；若本次提交是 amend，则推送时使用强制推送。 */
-export async function commitAndPush(
-  ctx: GitContext,
-  message: string,
-  amend = false,
-): Promise<void> {
-  await commit(ctx, message, amend);
-  // Push current branch
-  const branch = await getCurrentBranch(ctx);
-  if (branch) {
-    const force = amend;
-    await push(ctx, branch, force);
-  }
 }
 
 /** 撤销单个文件的所有改动：HEAD 中存在则恢复为 HEAD 版本，否则视为新文件直接删除。 */

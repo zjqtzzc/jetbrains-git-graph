@@ -67,7 +67,6 @@ export type CommandType =
   | "updateBranch"
   | "fetchBranch"
   | "commitChanges"
-  | "commitAndPush"
   | "amendCommit"
   | "rollbackFile"
   | "rollbackFiles"

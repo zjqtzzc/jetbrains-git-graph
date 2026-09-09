@@ -463,11 +463,6 @@ export class GitService {
     return statusOps.commit(this.ctx, message, amend);
   }
 
-  /** 提交后立即推送当前分支。 */
-  commitAndPush(message: string, amend?: boolean): Promise<void> {
-    return statusOps.commitAndPush(this.ctx, message, amend);
-  }
-
   /** 撤销单个文件的所有改动。 */
   rollbackFile(filePath: string): Promise<void> {
     return statusOps.rollbackFile(this.ctx, filePath);

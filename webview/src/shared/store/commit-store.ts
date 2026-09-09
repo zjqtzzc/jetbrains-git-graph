@@ -73,7 +73,6 @@ interface CommitStore {
   stageAll: () => Promise<void>;
   unstageAll: () => Promise<void>;
   commit: () => Promise<boolean>;
-  commitAndPush: () => Promise<boolean>;
   rollbackFile: (filePath: string) => Promise<void>;
   showDiff: (filePath: string, staged?: boolean) => Promise<void>;
   shelveChanges: (message?: string, filePaths?: string[]) => Promise<void>;
@@ -283,32 +282,6 @@ export const useCommitStore = create<CommitStore>((set, get) => ({
       return true;
     } catch (err) {
       console.error("commit failed:", err);
-      return false;
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  async commitAndPush() {
-    const { commitMessage, amend, changes, selectedFiles } = get();
-    if (!commitMessage.trim()) return false;
-
-    const filesToStage = changes
-      .filter((f) => !f.staged && selectedFiles.has(`${f.path}:${f.staged}`))
-      .map((f) => f.path);
-
-    try {
-      set({ loading: true });
-      await bridge.request("commitAndPush", {
-        message: commitMessage,
-        amend,
-        filePaths: filesToStage,
-      });
-      set({ commitMessage: "", amend: false });
-      await get().fetchChanges();
-      return true;
-    } catch (err) {
-      console.error("commitAndPush failed:", err);
       return false;
     } finally {
       set({ loading: false });

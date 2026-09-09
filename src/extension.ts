@@ -1031,24 +1031,6 @@ export function activate(context: vscode.ExtensionContext) {
     return { success: true };
   });
 
-  messageRouter.handle("commitAndPush", async (params) => {
-    if (!gitService) return NOT_GIT_REPO;
-    const message = params.message as string;
-    const amend = params.amend as boolean | undefined;
-    const filePaths = params.filePaths as string[] | undefined;
-
-    if (filePaths && filePaths.length > 0) {
-      await gitService.stageFiles(filePaths);
-    }
-
-    return withProgress(messageRouter, async () => {
-      await gitService.commitAndPush(message, amend ?? false);
-      messageRouter.broadcastEvent("commitStateChanged", {});
-      messageRouter.broadcastEvent("gitStateChanged", {});
-      return { success: true };
-    });
-  });
-
   messageRouter.handle("amendCommit", async (params) => {
     if (!gitService) return NOT_GIT_REPO;
     const message = params.message as string;
