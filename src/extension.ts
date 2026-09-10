@@ -1,7 +1,12 @@
 import * as nodefs from "node:fs/promises";
 import * as vscode from "vscode";
 import { BranchDivergedError, GitService } from "./git/gitService";
-import type { DiffFile, GitLogger, LaneSnapshot } from "./git/types";
+import type {
+  DiffFile,
+  GitLogger,
+  LaneSnapshot,
+  WorkingTreeFile,
+} from "./git/types";
 import { MessageRouter } from "./messages/messageRouter";
 import { CommitViewProvider } from "./views/commitViewProvider";
 import { ConflictsManager } from "./views/conflictsManager";
@@ -115,6 +120,40 @@ export function activate(context: vscode.ExtensionContext) {
       commitProvider,
       { webviewOptions: { retainContextWhenHidden: true } },
     ),
+  );
+
+  /** 汇总所有 workspace 的工作区改动列表，跳过不是 git 仓库的目录。 */
+  async function aggregateWorkingTreeChanges(): Promise<WorkingTreeFile[]> {
+    const allChanges: WorkingTreeFile[] = [];
+    for (const svc of allGitServices) {
+      try {
+        const changes = await svc.getWorkingTreeChanges();
+        allChanges.push(...changes);
+      } catch {
+        // Skip folders that aren't git repos
+      }
+    }
+    return allChanges;
+  }
+
+  /** 刷新活动栏图标上的角标：Changes + Unversioned Files 数量（不含冲突文件）。 */
+  async function updateCommitBadge(): Promise<void> {
+    if (allGitServices.length === 0) return;
+    try {
+      const allChanges = await aggregateWorkingTreeChanges();
+      const count = allChanges.filter((f) => f.status !== "conflicted").length;
+      commitProvider.setBadge(count);
+    } catch {
+      // Ignore transient errors (e.g. mid-rebase status query failures)
+    }
+  }
+  void updateCommitBadge();
+  context.subscriptions.push(
+    messageRouter.onBroadcast((event) => {
+      if (event === "commitStateChanged" || event === "gitStateChanged") {
+        void updateCommitBadge();
+      }
+    }),
   );
 
   // 3. MergeEditorManager + ConflictsManager (always created)
@@ -979,18 +1018,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   messageRouter.handle("getWorkingTreeChanges", async () => {
     if (allGitServices.length === 0) return NOT_GIT_REPO;
-
-    // Aggregate changes from all workspace folders
-    const allChanges: import("./git/types").WorkingTreeFile[] = [];
-    for (const svc of allGitServices) {
-      try {
-        const changes = await svc.getWorkingTreeChanges();
-        allChanges.push(...changes);
-      } catch {
-        // Skip folders that aren't git repos
-      }
-    }
-    return allChanges;
+    return aggregateWorkingTreeChanges();
   });
 
   messageRouter.handle("commitChanges", async (params) => {

@@ -13,10 +13,30 @@ export type CommandHandler = (
 export class MessageRouter {
   private webviews = new Set<vscode.Webview>();
   private handlers = new Map<string, CommandHandler>();
+  private broadcastListeners = new Set<
+    (event: EventType, data: unknown) => void
+  >();
 
   /** 注册一个命令处理器 */
   handle(command: string, handler: CommandHandler): void {
     this.handlers.set(command, handler);
+  }
+
+  /**
+   * 订阅"广播了一个事件"这件事本身（不关心具体是哪个 webview 收到的）。
+   * 用于跟某个具体 webview 无关、但需要感知"git 状态可能变了"的场景，
+   * 比如活动栏角标——不需要给 MessageRouter 加任何跟角标相关的知识，
+   * 它只负责在有广播发生时通知订阅者。
+   */
+  onBroadcast(
+    listener: (event: EventType, data: unknown) => void,
+  ): vscode.Disposable {
+    this.broadcastListeners.add(listener);
+    return {
+      dispose: () => {
+        this.broadcastListeners.delete(listener);
+      },
+    };
   }
 
   /** 注册一个 webview，使其能接收事件、处理请求 */
@@ -40,6 +60,9 @@ export class MessageRouter {
     const msg: EventMessage = { type: "event", event, data };
     for (const webview of this.webviews) {
       webview.postMessage(msg);
+    }
+    for (const listener of this.broadcastListeners) {
+      listener(event, data);
     }
   }
 

@@ -6,17 +6,32 @@ import { getWebviewHtml } from "./html";
 export class CommitViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "git-brains.commitPanel";
 
+  private view: vscode.WebviewView | undefined;
+
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly messageRouter: MessageRouter,
     private readonly caches: GitCache[] = [],
   ) {}
 
+  /** 在活动栏图标上显示/更新改动数量角标，count 为 0 时隐藏角标。 */
+  setBadge(count: number): void {
+    if (!this.view) return;
+    this.view.badge =
+      count > 0
+        ? {
+            value: count,
+            tooltip: `${count} changed file${count === 1 ? "" : "s"}`,
+          }
+        : undefined;
+  }
+
   resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ): void {
+    this.view = webviewView;
     const webview = webviewView.webview;
 
     webview.options = {
@@ -27,7 +42,10 @@ export class CommitViewProvider implements vscode.WebviewViewProvider {
     webview.html = getWebviewHtml(webview, this.extensionUri, "commit");
 
     const routerDisposable = this.messageRouter.registerWebview(webview);
-    webviewView.onDidDispose(() => routerDisposable.dispose());
+    webviewView.onDidDispose(() => {
+      routerDisposable.dispose();
+      if (this.view === webviewView) this.view = undefined;
+    });
 
     // 首次打开：延迟一段时间后聚焦到 git log 面板
     setTimeout(() => {
