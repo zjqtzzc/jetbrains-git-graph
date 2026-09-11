@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## [0.5.1] - 2026-09-11
+
+### 修复
+- **工作区有未提交改动时无法 Rebase**：分支右键菜单的 "Rebase" 和 "Checkout and Rebase onto..." 都改为带 `--autostash`，发起 rebase 前自动 stash 未提交改动，rebase 成功后自动还原，不用先手动 commit/stash
+
 ## [0.5.0] - 2026-09-11
 
 ### 上线 Marketplace 🎉

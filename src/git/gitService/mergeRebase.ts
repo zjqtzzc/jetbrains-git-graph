@@ -196,9 +196,14 @@ export async function merge(
   ctx.invalidateCache();
 }
 
-/** 将当前分支 rebase 到指定目标之上。 */
+/**
+ * 将当前分支 rebase 到指定目标之上。
+ * 带 `--autostash`：工作区有未提交改动时自动 stash，rebase 成功后自动还原；
+ * `git rebase --autostash` 自 Git 2.6（2015）起就支持，不存在版本兼容问题
+ * （不同于 `merge --autostash` 需要 Git 2.27，见 updateBranch）。
+ */
 export async function rebase(ctx: GitContext, onto: string): Promise<void> {
-  await ctx.execGit(["rebase", onto]);
+  await ctx.execGit(["rebase", "--autostash", onto]);
   ctx.invalidateCache();
 }
 
@@ -236,7 +241,7 @@ export async function checkoutAndRebase(
   rebaseOnto: string,
 ): Promise<void> {
   await ctx.execGit(["checkout", branchToCheckout]);
-  await ctx.execGit(["rebase", rebaseOnto]);
+  await ctx.execGit(["rebase", "--autostash", rebaseOnto]);
   ctx.invalidateCache();
 }
 
