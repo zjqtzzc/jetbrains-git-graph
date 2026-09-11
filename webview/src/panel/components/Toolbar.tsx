@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ClearIcon,
+  DropdownChevronIcon,
+  SearchGlyphIcon,
+  ViewOptionsIcon,
+} from "../../shared/components/Icons";
 import { Tooltip } from "../../shared/components/Tooltip";
 import "../../shared/components/Tooltip.css";
 import { usePanelStore } from "../../shared/store/panel-store";
@@ -277,9 +283,7 @@ export function Toolbar() {
               (e.currentTarget as HTMLElement).style.opacity = "0.5";
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z" />
-            </svg>
+            <ClearIcon />
           </div>
         </div>
       )}
@@ -330,23 +334,14 @@ function SearchInput({
         width: 180,
       }}
     >
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
+      <SearchGlyphIcon
         style={{
           position: "absolute",
           left: 7,
           opacity: 0.5,
           pointerEvents: "none",
         }}
-      >
-        <circle cx="7" cy="7" r="4.5" />
-        <line x1="10.5" y1="10.5" x2="14" y2="14" />
-      </svg>
+      />
       <input
         ref={inputRef}
         type="text"
@@ -401,9 +396,7 @@ function SearchInput({
             (e.currentTarget as HTMLElement).style.opacity = "0.6";
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z" />
-          </svg>
+          <ClearIcon />
         </div>
       )}
     </div>
@@ -449,17 +442,11 @@ function FilterButton({
             style={{ display: "inline-flex", alignItems: "center", gap: 2 }}
           >
             {label}
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
+            <DropdownChevronIcon
+              size={10}
+              strokeWidth={1.5}
               style={{ opacity: 0.7 }}
-            >
-              <polyline points="4,6 8,10 12,6" />
-            </svg>
+            />
           </span>
         )}
       </span>
@@ -487,9 +474,7 @@ function FilterButton({
             (e.currentTarget as HTMLElement).style.background = "transparent";
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z" />
-          </svg>
+          <ClearIcon />
         </div>
       )}
     </div>
@@ -676,24 +661,6 @@ function SearchableDropdown({
         )}
       </div>
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ViewOptionsIcon — eye icon with small triangle (JetBrains show.svg style)
-// ---------------------------------------------------------------------------
-
-function ViewOptionsIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M8 4C4.5 4 2 8 2 8C2 8 4.5 12 8 12C11.5 12 14 8 14 8C14 8 11.5 4 8 4Z"
-        stroke="currentColor"
-        strokeLinejoin="round"
-      />
-      <circle cx="8" cy="8" r="2" stroke="currentColor" />
-      <path d="M9 12L10 14H8L9 12Z" fill="currentColor" opacity="0.6" />
-    </svg>
   );
 }
 

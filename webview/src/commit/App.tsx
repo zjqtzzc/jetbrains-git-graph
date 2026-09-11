@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { bridge } from "../shared/bridge";
+import { AbortIcon, ContinueIcon, SkipIcon } from "../shared/components/Icons";
 import { Tooltip } from "../shared/components/Tooltip";
 import "../shared/components/Tooltip.css";
 import { useCommitStore } from "../shared/store/commit-store";
@@ -105,28 +106,7 @@ function RebaseBanner() {
           className="rebase-action-btn rebase-continue"
         >
           {/* JetBrains official expui double chevron >> icon */}
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M2.5 11.5L6 8L2.5 4.5"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8.5 11.5L12 8L8.5 4.5"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ContinueIcon />
         </div>
       </Tooltip>
       <Tooltip text="Abort Rebase (git rebase --abort)">
@@ -144,21 +124,7 @@ function RebaseBanner() {
           className="rebase-action-btn rebase-abort"
         >
           {/* JetBrains official expui/vcs/abort × icon */}
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M4 12L12 4M12 12L4 4"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <AbortIcon />
         </div>
       </Tooltip>
     </div>
@@ -260,28 +226,7 @@ function CherryPickBanner() {
           }}
           className="rebase-action-btn rebase-continue"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M2.5 11.5L6 8L2.5 4.5"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8.5 11.5L12 8L8.5 4.5"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ContinueIcon />
         </div>
       </Tooltip>
       <Tooltip text="Skip Cherry-pick (git cherry-pick --skip)">
@@ -299,21 +244,7 @@ function CherryPickBanner() {
           className="rebase-action-btn rebase-continue"
           style={{ background: "#fb8c00" }}
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M5 4L11 8L5 12"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <SkipIcon />
         </div>
       </Tooltip>
       <Tooltip text="Abort Cherry-pick (git cherry-pick --abort)">
@@ -330,21 +261,7 @@ function CherryPickBanner() {
           }}
           className="rebase-action-btn rebase-abort"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M4 12L12 4M12 12L4 4"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <AbortIcon />
         </div>
       </Tooltip>
     </div>
@@ -452,28 +369,7 @@ function MergeBanner() {
           }}
           className="rebase-action-btn rebase-continue"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M2.5 11.5L6 8L2.5 4.5"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8.5 11.5L12 8L8.5 4.5"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ContinueIcon />
         </div>
       </Tooltip>
       <Tooltip text="Abort Merge (git merge --abort)" position="top">
@@ -490,21 +386,7 @@ function MergeBanner() {
           }}
           className="rebase-action-btn rebase-abort"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M4 12L12 4M12 12L4 4"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <AbortIcon />
         </div>
       </Tooltip>
     </div>
@@ -526,6 +408,38 @@ export function CommitApp() {
     fetchShelves();
     fetchIdeaShelves();
   }, [fetchChanges, fetchShelves, fetchIdeaShelves]);
+
+  useEffect(() => {
+    // 文件列表行设置了 user-select: none，页面里没有真正的文本选区，
+    // Chromium 在没有选区、焦点也不在可编辑元素上时不会派发 "copy" 事件，
+    // 所以不能指望原生 copy 事件，改成直接监听 Cmd/Ctrl+C 按键写剪贴板
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "c" && e.key !== "C") return;
+      if (!(e.metaKey || e.ctrlKey)) return;
+
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const { highlightedFiles, changes, activeTab } =
+        useCommitStore.getState();
+      if (activeTab !== "commit" || highlightedFiles.size === 0) return;
+      const names = changes
+        .filter((f) => highlightedFiles.has(f.path))
+        .map((f) => f.path.split("/").pop() || f.path);
+      if (names.length === 0) return;
+      e.preventDefault();
+      bridge.request("copyToClipboard", { text: names.join("\n") });
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="commit-app">

@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { bridge } from "../../shared/bridge";
+import {
+  DropdownChevronIcon,
+  HistoryIcon,
+} from "../../shared/components/Icons";
 import { Tooltip } from "../../shared/components/Tooltip";
 import "../../shared/components/Tooltip.css";
 import { useCommitStore } from "../../shared/store/commit-store";
@@ -189,16 +193,7 @@ export function CommitMessageArea() {
             disabled={!canCommit}
             onClick={() => setShowDropdown(!showDropdown)}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="4,6 8,10 12,6" />
-            </svg>
+            <DropdownChevronIcon />
           </button>
           {showDropdown && (
             <div className="commit-dropdown-menu">
@@ -333,17 +328,3 @@ const HistoryDropdown = React.forwardRef<HTMLDivElement, HistoryDropdownProps>(
     );
   },
 );
-
-function HistoryIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      style={{ opacity: 0.5 }}
-    >
-      <path d="M13.507 12.324a7 7 0 0 0 .065-8.56A7 7 0 0 0 2 4.393V2H1v3.5l.5.5H5V5H2.811a6.008 6.008 0 1 1-.135 5.77l-.887.462a7 7 0 0 0 11.718 1.092zM8 4v4.5l.5.5H12v-1H9V4H8z" />
-    </svg>
-  );
-}

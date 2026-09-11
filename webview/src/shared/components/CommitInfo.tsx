@@ -1,4 +1,5 @@
 import type { Commit } from "../types/git";
+import { RefTagIcon } from "./Icons";
 
 /** Renders text with URLs highlighted as clickable links */
 function Linkify({ text }: { text: string }) {
@@ -135,15 +136,7 @@ export function CommitInfo({ commit }: { commit: Commit }) {
                 }}
                 title={r.name}
               >
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M2.5 3.5C2.5 2.95 2.95 2.5 3.5 2.5H7.09c.27 0 .52.1.71.3l5.41 5.41c.39.39.39 1.02 0 1.41l-3.59 3.59c-.39.39-1.02.39-1.41 0L2.79 7.8a1 1 0 01-.29-.71V3.5z"
-                    fill="var(--app-bg, #fff)"
-                    stroke={color}
-                    strokeWidth="1.2"
-                  />
-                  <circle cx="5" cy="5" r="0.9" fill={color} />
-                </svg>
+                <RefTagIcon size={12} color={color} />
                 <span>{label}</span>
               </span>
             );

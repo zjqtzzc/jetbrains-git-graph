@@ -1,6 +1,11 @@
 import { Allotment } from "allotment";
 import { useCallback, useEffect, useState } from "react";
 import "allotment/dist/style.css";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+} from "../shared/components/Icons";
 import { Tooltip } from "../shared/components/Tooltip";
 import "../shared/components/Tooltip.css";
 import { usePreventSelect } from "../shared/hooks/usePreventSelect";
@@ -268,43 +273,5 @@ export function PanelApp() {
         </div>
       </div>
     </div>
-  );
-}
-
-function ChevronRightIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M6 4.5L9.5 8L6 11.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ChevronLeftIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M10 4.5L6.5 8L10 11.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M4.5 11.5L11.5 4.5M11.5 11.5L4.5 4.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

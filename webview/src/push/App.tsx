@@ -5,6 +5,7 @@ import CodiconListTree from "~icons/codicon/list-tree";
 import { bridge } from "../shared/bridge";
 import { CommitInfo } from "../shared/components/CommitInfo";
 import { FileTree } from "../shared/components/FileTree";
+import { DropdownChevronIcon } from "../shared/components/Icons";
 import type { Commit, DiffFile } from "../shared/types/git";
 import { RemoteBranchSelector } from "./components/RemoteBranchSelector";
 import { useDraggableDivider } from "./hooks/useDraggableDivider";
@@ -266,17 +267,10 @@ export function PushApp() {
             }}
           >
             {formatRemoteBranchLabel(targetRemote, targetBranch)}
-            <svg
+            <DropdownChevronIcon
               className="push-route-target__indicator"
-              width="10"
-              height="10"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="4,6 8,10 12,6" />
-            </svg>
+              size={10}
+            />
           </span>
         </span>
         {selectorOpen && (
@@ -457,16 +451,7 @@ export function PushApp() {
             onClick={() => setShowPushMenu(!showPushMenu)}
             disabled={pushing || commits.length === 0}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="4,6 8,10 12,6" />
-            </svg>
+            <DropdownChevronIcon />
           </button>
           {showPushMenu && (
             <>

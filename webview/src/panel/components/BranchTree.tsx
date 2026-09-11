@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { bridge, bridgeWithProgress } from "../../shared/bridge";
+import {
+  BranchIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClearIcon,
+  FolderIconBlack,
+  SearchGlyphIcon,
+  TagIcon,
+  TagOutlineIcon,
+} from "../../shared/components/Icons";
 import { Tooltip } from "../../shared/components/Tooltip";
 import { useModifierClickSelection } from "../../shared/hooks/useModifierClickSelection";
 import { usePreventSelect } from "../../shared/hooks/usePreventSelect";
@@ -9,124 +19,6 @@ import type { BranchInfo, TagInfo } from "../../shared/types/git";
 import { BranchSidebar as BranchSidebarComponent } from "./BranchSidebar";
 import { CreateBranchDialog } from "./CreateBranchDialog";
 import { PushDialog } from "./PushDialog";
-
-// ---------------------------------------------------------------------------
-// Inline SVG Icons (stroke-based, IDEA style)
-// ---------------------------------------------------------------------------
-
-function IconChevronDown({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      style={{ verticalAlign: "middle", ...style }}
-    >
-      <polyline points="4,6 8,10 12,6" />
-    </svg>
-  );
-}
-
-function IconChevronRight({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      style={{ verticalAlign: "middle", ...style }}
-    >
-      <polyline points="6,4 10,8 6,12" />
-    </svg>
-  );
-}
-
-function IconFolder({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ verticalAlign: "middle", ...style }}
-    >
-      <path
-        d="M8.10584 4.34613L8.25344 4.5H8.46667H13C13.8284 4.5 14.5 5.17157 14.5 6V12.1333C14.5 12.9529 13.932 13.5 13.3667 13.5H2.63333C2.06804 13.5 1.5 12.9529 1.5 12.1333V3.86667C1.5 3.04707 2.06804 2.5 2.63333 2.5H6.1217C6.25792 2.5 6.38824 2.55557 6.48253 2.65387L8.10584 4.34613Z"
-        fill="currentColor"
-        fillOpacity={0.15}
-        stroke="currentColor"
-      />
-    </svg>
-  );
-}
-
-function IconBranch({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ verticalAlign: "middle", ...style }}
-    >
-      <circle cx="4.5" cy="4" r="2" stroke="currentColor" />
-      <path
-        d="M4.5 11.5H8.5C9.60457 11.5 10.5 10.6046 10.5 9.5V9.5V8"
-        stroke="currentColor"
-      />
-      <path
-        d="M4.5 6.5L4.5 14.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="10.5" cy="6" r="2" stroke="currentColor" />
-    </svg>
-  );
-}
-
-function IconTag({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ verticalAlign: "middle", ...style }}
-    >
-      <path d="M3 2.5h4.5l6 6-4.5 4.5-6-6V2.5z" stroke="currentColor" />
-      <circle cx="5.5" cy="5" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IconTagOutline({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ verticalAlign: "middle", ...style }}
-    >
-      <path
-        d="M3 2.5h4.5l6 6-4.5 4.5-6-6V2.5z"
-        stroke="currentColor"
-        strokeDasharray="2 1.5"
-      />
-      <circle cx="5.5" cy="5" r="1" fill="currentColor" />
-    </svg>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Tree data structure
@@ -475,23 +367,14 @@ export function BranchTree({
               flex: 1,
             }}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.2"
+            <SearchGlyphIcon
               style={{
                 position: "absolute",
                 left: 7,
                 opacity: 0.5,
                 pointerEvents: "none",
               }}
-            >
-              <circle cx="7" cy="7" r="4.5" />
-              <line x1="10.5" y1="10.5" x2="14" y2="14" />
-            </svg>
+            />
             <input
               type="text"
               placeholder="Branch or tag"
@@ -545,14 +428,7 @@ export function BranchTree({
                   (e.currentTarget as HTMLElement).style.opacity = "0.6";
                 }}
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                >
-                  <path d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z" />
-                </svg>
+                <ClearIcon />
               </div>
             )}
           </div>
@@ -769,10 +645,15 @@ function TreeNodeView({
       <BranchItem
         icon={
           isCurrent ? (
-            <IconTag style={{ color: "#d4a017" }} />
+            <TagIcon
+              size={14}
+              style={{ verticalAlign: "middle", color: "#d4a017" }}
+            />
           ) : (
-            <IconBranch
+            <BranchIcon
+              size={14}
               style={{
+                verticalAlign: "middle",
                 color: "var(--description-fg)",
               }}
             />
@@ -809,8 +690,15 @@ function TreeNodeView({
           gap: 2,
         }}
       >
-        {isCollapsed ? <IconChevronRight /> : <IconChevronDown />}
-        <IconFolder style={{ color: "var(--description-fg)" }} />
+        {isCollapsed ? (
+          <ChevronRightIcon size={14} />
+        ) : (
+          <ChevronDownIcon size={14} />
+        )}
+        <FolderIconBlack
+          size={14}
+          style={{ verticalAlign: "middle", color: "var(--description-fg)" }}
+        />
         <span style={{ marginLeft: 2 }}>{node.name}</span>
       </div>
       {!isCollapsed &&
@@ -865,7 +753,7 @@ function TagTreeNodeView({
           gap: 4,
         }}
       >
-        <IconTagOutline style={{ color: "var(--description-fg)" }} />
+        <TagOutlineIcon style={{ color: "var(--description-fg)" }} />
         {node.name}
       </div>
     );
@@ -887,8 +775,15 @@ function TagTreeNodeView({
           gap: 2,
         }}
       >
-        {isCollapsed ? <IconChevronRight /> : <IconChevronDown />}
-        <IconFolder style={{ color: "var(--description-fg)" }} />
+        {isCollapsed ? (
+          <ChevronRightIcon size={14} />
+        ) : (
+          <ChevronDownIcon size={14} />
+        )}
+        <FolderIconBlack
+          size={14}
+          style={{ verticalAlign: "middle", color: "var(--description-fg)" }}
+        />
         <span style={{ marginLeft: 2 }}>{node.name}</span>
       </div>
       {!isCollapsed &&
@@ -936,7 +831,12 @@ function GroupSection({
           gap: 4,
         }}
       >
-        {collapsed ? <IconChevronRight /> : <IconChevronDown />} {title}
+        {collapsed ? (
+          <ChevronRightIcon size={14} />
+        ) : (
+          <ChevronDownIcon size={14} />
+        )}{" "}
+        {title}
       </div>
       {!collapsed && children}
     </div>

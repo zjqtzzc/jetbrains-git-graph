@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getFileIcon } from "../../panel/utils/file-icons";
+import { ChevronRightIcon } from "../../shared/components/Icons";
 import {
   type ShelveEntry,
   useCommitStore,
@@ -138,7 +139,7 @@ function ShelfItem({
     <div className="shelf-item-container" onContextMenu={onContextMenu}>
       <div className="shelf-item-row" onClick={onToggle}>
         <span className={`shelf-item-chevron ${expanded ? "" : "collapsed"}`}>
-          <ChevronIcon />
+          <ChevronRightIcon />
         </span>
         <span className="shelf-item-title">{entry.message || "Changes"}</span>
         <span className="shelf-item-info">
@@ -212,16 +213,4 @@ function formatDate(isoDate: string): string {
   const hh = String(date.getHours()).padStart(2, "0");
   const mm = String(date.getMinutes()).padStart(2, "0");
   return `${d}/${m}/${y} ${hh}:${mm}`;
-}
-
-function ChevronIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M6 11.5L9.5 8L6 4.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
 }
