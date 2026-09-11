@@ -16,6 +16,8 @@ biome.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 CLAUDE.md
+CLAUDE.local.md
+tmp/**
 **/tsconfig.json
 **/eslint.config.mjs
 **/*.map

@@ -1,9 +1,9 @@
 {
-  "name": "idea-like-git-graph",
-  "displayName": "JetBrains Git - IntelliJ IDEA Git Graph, Commit & Shelf for VS Code",
+  "name": "make-git-great-again",
+  "displayName": "Make Git Great Again",
   "publisher": "zjqtzzc",
-  "description": "Bring IntelliJ IDEA / JetBrains Git experience to VS Code & Cursor: Git graph visualization, IDEA-style commit panel with shelf/stash, branch management, cherry-pick, rebase, merge, 3-way merge editor, and context menus. The best JetBrains Git alternative for Visual Studio Code.",
-  "version": "0.4.24",
+  "description": "Make Git Great Again — bring IntelliJ IDEA / JetBrains Git experience to VS Code & Cursor: Git graph visualization, IDEA-style commit panel with shelf/stash, branch management, cherry-pick, rebase, merge, 3-way merge editor, and context menus.",
+  "version": "0.5.0",
   "license": "MIT",
   "icon": "images/icon.png",
   "repository": {

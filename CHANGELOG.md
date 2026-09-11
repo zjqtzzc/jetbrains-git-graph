@@ -1,5 +1,14 @@
 # Changelog / 更新日志
 
+## [0.5.0] - 2026-09-11
+
+### 上线 Marketplace 🎉
+- 正式发布到 VS Code Marketplace，扩展改名为 **Make Git Great Again**（`publisher.name`: `zjqtzzc.make-git-great-again`，原 `idea-like-git-graph`）
+- README 同步更新：补充 Shelf/Stash 使用说明，安装方式改为 Marketplace 直接安装
+
+### 修复
+- 工具栏 Branch/User/Date 筛选下拉框、View Options 下拉框的"点击外部关闭"逻辑改为以触发按钮所在容器判断，避免点触发按钮本身时被外部点击监听误判关闭
+
 ## [0.4.24] - 2026-09-11
 
 ### 修复

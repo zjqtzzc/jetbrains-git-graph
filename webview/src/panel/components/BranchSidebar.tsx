@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { type RefObject, useCallback, useRef, useState } from "react";
 import { bridge, bridgeWithProgress } from "../../shared/bridge";
 import {
   AddIcon,
@@ -249,12 +249,20 @@ function SettingsButton() {
           <SettingsIcon />
         </button>
       </Tooltip>
-      {open && <SettingsMenu onClose={() => setOpen(false)} />}
+      {open && (
+        <SettingsMenu onClose={() => setOpen(false)} triggerRef={btnRef} />
+      )}
     </>
   );
 }
 
-function SettingsMenu({ onClose }: { onClose: () => void }) {
+function SettingsMenu({
+  onClose,
+  triggerRef,
+}: {
+  onClose: () => void;
+  triggerRef: RefObject<HTMLButtonElement | null>;
+}) {
   const branchGroupByDirectory = usePanelStore((s) => s.branchGroupByDirectory);
   const toggleBranchGroupByDirectory = usePanelStore(
     (s) => s.toggleBranchGroupByDirectory,
@@ -264,7 +272,10 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
     (node: HTMLDivElement | null) => {
       if (!node) return;
       const handleClick = (e: MouseEvent) => {
-        if (!node.contains(e.target as Node)) onClose();
+        const target = e.target as Node;
+        if (node.contains(target)) return;
+        if (triggerRef.current?.contains(target)) return;
+        onClose();
       };
       const handleKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") onClose();
@@ -276,7 +287,7 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
         document.removeEventListener("keydown", handleKey);
       };
     },
-    [onClose],
+    [onClose, triggerRef],
   );
 
   return (
@@ -290,19 +301,8 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
         zIndex: 1000,
       }}
     >
-      <button
-        type="button"
-        className="commit-context-menu-item"
-        onClick={() => {
-          toggleBranchGroupByDirectory();
-          onClose();
-        }}
-      >
-        <span>{branchGroupByDirectory ? "✓ " : ""}Group by Directory</span>
-      </button>
-      <div className="commit-context-menu-separator" />
       <div className="commit-context-menu-header">On Single Click</div>
-      {/* 以下三项尚未实现（点击不会有任何效果），先禁用避免误导 */}
+      {/* 以下两项尚未实现（点击不会有任何效果），先禁用避免误导 */}
       <button
         type="button"
         className="commit-context-menu-item"
@@ -320,6 +320,16 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
         <span>Navigate Log to Branch Head (未实现)</span>
       </button>
       <div className="commit-context-menu-separator" />
+      <button
+        type="button"
+        className="commit-context-menu-item"
+        onClick={() => {
+          toggleBranchGroupByDirectory();
+          onClose();
+        }}
+      >
+        <span>{branchGroupByDirectory ? "✓ " : ""}Group by Directory</span>
+      </button>
       <button
         type="button"
         className="commit-context-menu-item"

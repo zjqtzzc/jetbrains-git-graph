@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ClearIcon,
   DropdownChevronIcon,
@@ -24,6 +31,11 @@ export function Toolbar() {
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
   const [showViewOptions, setShowViewOptions] = useState(false);
+
+  const branchFilterRef = useRef<HTMLDivElement>(null);
+  const userFilterRef = useRef<HTMLDivElement>(null);
+  const dateFilterRef = useRef<HTMLDivElement>(null);
+  const viewOptionsRef = useRef<HTMLDivElement>(null);
 
   // Collect unique authors from commits
   const authors = useMemo(() => {
@@ -109,7 +121,7 @@ export function Toolbar() {
       />
 
       {/* Branch filter */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative" }} ref={branchFilterRef}>
         <FilterButton
           label="Branch"
           active={!!filter.branch}
@@ -130,12 +142,13 @@ export function Toolbar() {
             onClear={filter.branch ? handleClearBranch : undefined}
             clearLabel="All branches"
             onClose={() => setShowBranchDropdown(false)}
+            containerRef={branchFilterRef}
           />
         )}
       </div>
 
       {/* User filter */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative" }} ref={userFilterRef}>
         <FilterButton
           label="User"
           active={!!filter.author}
@@ -156,12 +169,13 @@ export function Toolbar() {
             onClear={filter.author ? handleClearAuthor : undefined}
             clearLabel="All users"
             onClose={() => setShowUserDropdown(false)}
+            containerRef={userFilterRef}
           />
         )}
       </div>
 
       {/* Date filter */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative" }} ref={dateFilterRef}>
         <FilterButton
           label="Date"
           active={!!filter.dateRange}
@@ -185,13 +199,14 @@ export function Toolbar() {
             clearLabel="All time"
             onClose={() => setShowDateDropdown(false)}
             labelMap={dateLabels}
+            containerRef={dateFilterRef}
           />
         )}
       </div>
 
       {/* View Options (eye icon) — pushed to far right */}
       <div style={{ flex: 1 }} />
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative" }} ref={viewOptionsRef}>
         <Tooltip text="View Options">
           <button
             type="button"
@@ -240,6 +255,7 @@ export function Toolbar() {
             visibleColumns={visibleColumns}
             onToggle={toggleColumnVisibility}
             onClose={() => setShowViewOptions(false)}
+            containerRef={viewOptionsRef}
           />
         )}
       </div>
@@ -535,6 +551,7 @@ function SearchableDropdown({
   clearLabel,
   onClose,
   labelMap,
+  containerRef,
 }: {
   items: string[];
   activeItem: string;
@@ -544,8 +561,8 @@ function SearchableDropdown({
   clearLabel?: string;
   onClose: () => void;
   labelMap?: Record<string, string>;
+  containerRef: RefObject<HTMLDivElement | null>;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
 
@@ -555,15 +572,18 @@ function SearchableDropdown({
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         onClose();
       }
     };
     const handleScroll = (e: Event) => {
       if (
-        ref.current &&
+        containerRef.current &&
         e.target instanceof Node &&
-        !ref.current.contains(e.target)
+        !containerRef.current.contains(e.target)
       ) {
         onClose();
       }
@@ -577,7 +597,7 @@ function SearchableDropdown({
       document.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [onClose]);
+  }, [onClose, containerRef]);
 
   const filtered = query
     ? items.filter((item) => {
@@ -588,7 +608,6 @@ function SearchableDropdown({
 
   return (
     <div
-      ref={ref}
       style={{
         position: "absolute",
         top: "100%",
@@ -672,16 +691,17 @@ function ViewOptionsDropdown({
   visibleColumns,
   onToggle,
   onClose,
+  containerRef,
 }: {
   visibleColumns: { author: boolean; date: boolean; hash: boolean };
   onToggle: (col: "author" | "date" | "hash") => void;
   onClose: () => void;
+  containerRef: RefObject<HTMLDivElement | null>;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target)) {
         onClose();
       }
     };
@@ -694,7 +714,7 @@ function ViewOptionsDropdown({
       document.removeEventListener("mousedown", handleClick, true);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [onClose]);
+  }, [onClose, containerRef]);
 
   const columns: { key: "author" | "date" | "hash"; label: string }[] = [
     { key: "author", label: "Author" },
@@ -704,7 +724,6 @@ function ViewOptionsDropdown({
 
   return (
     <div
-      ref={ref}
       style={{
         position: "absolute",
         top: "100%",

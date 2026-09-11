@@ -4,13 +4,13 @@
 
 <img src="https://raw.githubusercontent.com/zjqtzzc/jetbrains-git-graph/main/images/assets/logo-128.png" width="80" />
 
-<h1>IntelliJ Git Graph - IDEA 风格分支与合并</h1>
+<h1>Make Git Great Again — 让你的 Git 再次伟大</h1>
 
 IntelliJ IDEA 风格的 Git 可视化工具：提交图、分支管理、Cherry-Pick、Rebase 和三路合并编辑器。
 
 > 个人 Fork 自 [autemj/jetbrains-git-graph](https://github.com/aotemj/jetbrains-git-graph)（该项目本身 Fork 自 [zhyc9de/jet-git](https://github.com/zhyc9de/jet-git)）。
 >
-> **当前状态：尚未上线 Marketplace。** 请暂时通过本地构建的 `.vsix` 安装，见下方[安装](#安装)。
+> **已上线 VS Code Marketplace**，见下方[安装](#安装)。
 
 </div>
 
@@ -58,6 +58,16 @@ IntelliJ IDEA 风格的 Git 可视化工具：提交图、分支管理、Cherry-
 - 快捷操作：接受 Yours / 接受 Theirs / 合并
 - 与 VS Code 源代码管理面板无缝集成
 
+### Shelf / Stash（贮藏变更）
+
+Commit 面板内置 Shelf 和 Stash 两个标签页，IDEA 风格的"贮藏"体验：
+
+- **Shelve Changes** — 从 Commit 标签页工具栏一键贮藏选中的变更（也可在变更文件右键菜单里贮藏单个/多个文件），暂时把改动收起而不提交
+- **贮藏列表** — 展开查看每次贮藏的说明、文件数、时间，以及具体改了哪些文件
+- **Unshelve / Restore** — 恢复贮藏的改动到工作区（Unshelve 恢复后清除记录，Restore 恢复后保留记录）
+- **Create Patch... / Import Patches...**（Shelf 标签页特有）— 把贮藏导出成 `.patch` 文件，或导入外部 patch 文件作为新的贮藏记录
+- **单文件操作** — 展开贮藏记录后可对单个文件查看 Diff、跳转到源码
+
 ---
 
 ## 所有右键菜单操作
@@ -98,8 +108,7 @@ IntelliJ IDEA 风格的 Git 可视化工具：提交图、分支管理、Cherry-
 - Open Repository Version — 查看该提交时的文件版本
 - Revert Selected Changes — 还原文件到父提交状态
 - Cherry-Pick Selected Changes — 将文件变更应用到工作区
-- Copy Path — 复制文件路径
-- Copy File Name — 复制文件名
+- History Up to Here — 按该文件过滤提交历史
 
 </details>
 
@@ -107,7 +116,13 @@ IntelliJ IDEA 风格的 Git 可视化工具：提交图、分支管理、Cherry-
 
 ## 安装
 
-**从 Marketplace 安装：** 暂不可用 —— 本 Fork 尚未发布（Marketplace 发布者注册还未完成）。
+**从 Marketplace 安装：**
+
+在 VS Code 扩展面板搜索 "Make Git Great Again"，或访问 [Marketplace 页面](https://marketplace.visualstudio.com/items?itemName=zjqtzzc.make-git-great-again)；也可以运行以下命令：
+
+```
+ext install zjqtzzc.make-git-great-again
+```
 
 **从 .vsix 安装：**
 
