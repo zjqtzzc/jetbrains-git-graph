@@ -285,44 +285,8 @@ function FileGroup({
     [label, files, expanded, groupByDirectory, collapsedDirs],
   );
 
-  const visibleKeys = useMemo(
-    () =>
-      items
-        .filter((item) => item.kind === "file")
-        .map((item) => item.file.path),
-    [items],
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-      e.preventDefault();
-
-      if (visibleKeys.length === 0) return;
-
-      let currentIdx = -1;
-      for (let i = 0; i < visibleKeys.length; i++) {
-        if (highlightedFiles.has(visibleKeys[i])) {
-          currentIdx = i;
-          break;
-        }
-      }
-
-      let nextIdx: number;
-      if (e.key === "ArrowDown") {
-        nextIdx =
-          currentIdx < visibleKeys.length - 1 ? currentIdx + 1 : currentIdx;
-      } else {
-        nextIdx = currentIdx > 0 ? currentIdx - 1 : 0;
-      }
-
-      onHighlightFile(visibleKeys[nextIdx], "single");
-    },
-    [visibleKeys, highlightedFiles, onHighlightFile],
-  );
-
   return (
-    <div className="commit-group" tabIndex={0} onKeyDown={handleKeyDown}>
+    <div className="commit-group">
       {items.map((item) => {
         if (item.kind === "folder") {
           const { node, depth } = item;

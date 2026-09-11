@@ -93,7 +93,6 @@ export type CommandType =
   | "showInfoNotification"
   | "openConflictsPanel"
   | "createBranchPrompt"
-  | "deleteBranchPrompt"
   | "compareWithCurrent"
   | "showMyBranches"
   | "fetchAll"

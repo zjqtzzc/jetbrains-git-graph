@@ -52,9 +52,39 @@ export function BranchSidebar({
     }
   }, [selectedBranch]);
 
-  const handleDeleteBranch = useCallback(() => {
-    if (selectedBranch) {
-      bridge.request("deleteBranchPrompt", { branchName: selectedBranch });
+  const handleDeleteBranch = useCallback(async () => {
+    if (!selectedBranch) return;
+    const result = (await bridge.request("showConfirmMessage", {
+      message: `Delete branch '${selectedBranch}'?`,
+      confirmLabel: "Delete",
+    })) as { confirmed: boolean };
+    if (!result.confirmed) return;
+    try {
+      await bridgeWithProgress("deleteBranch", {
+        branchName: selectedBranch,
+        isRemote: false,
+        force: false,
+      });
+    } catch (_err) {
+      // 未完全合并时，git branch -d 会失败，这里改用 -D 强制删除前再确认一次
+      const forceResult = (await bridge.request("showConfirmMessage", {
+        message: `Branch '${selectedBranch}' is not fully merged. Force delete?`,
+        confirmLabel: "Force Delete",
+      })) as { confirmed: boolean };
+      if (forceResult.confirmed) {
+        try {
+          await bridgeWithProgress("deleteBranch", {
+            branchName: selectedBranch,
+            isRemote: false,
+            force: true,
+          });
+        } catch (err2) {
+          const msg = err2 instanceof Error ? err2.message : String(err2);
+          bridge
+            .request("showErrorNotification", { message: msg })
+            .catch(() => {});
+        }
+      }
     }
   }, [selectedBranch]);
 

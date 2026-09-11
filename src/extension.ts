@@ -1398,23 +1398,6 @@ export function activate(context: vscode.ExtensionContext) {
     });
   });
 
-  messageRouter.handle("deleteBranchPrompt", async (params) => {
-    if (!gitService) return NOT_GIT_REPO;
-    const branchName = params.branchName as string;
-    if (!branchName) return { success: false };
-    const confirm = await vscode.window.showWarningMessage(
-      `Delete branch "${branchName}"?`,
-      { modal: true },
-      "Delete",
-    );
-    if (confirm !== "Delete") return { success: false };
-    return withProgress(messageRouter, async () => {
-      await gitService.deleteBranch(branchName);
-      messageRouter.broadcastEvent("gitStateChanged", {});
-      return { success: true };
-    });
-  });
-
   messageRouter.handle("compareWithCurrent", async (params) => {
     if (!gitService) return NOT_GIT_REPO;
     const branchName = params.branchName as string;
