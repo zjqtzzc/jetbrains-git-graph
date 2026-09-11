@@ -28,6 +28,9 @@ export function BranchSidebar({
   const selectedBranches = usePanelStore((s) => s.selectedBranches);
   const selectedBranch =
     selectedBranches.length === 1 ? selectedBranches[0] : null;
+  const branches = usePanelStore((s) => s.branches);
+  const isSelectedBranchRemote =
+    branches.find((b) => b.name === selectedBranch)?.isRemote ?? false;
 
   const handleNewBranch = useCallback(() => {
     if (!selectedBranch) return;
@@ -54,7 +57,7 @@ export function BranchSidebar({
     try {
       await bridgeWithProgress("deleteBranch", {
         branchName: selectedBranch,
-        isRemote: false,
+        isRemote: isSelectedBranchRemote,
         force: false,
       });
     } catch (_err) {
@@ -67,7 +70,7 @@ export function BranchSidebar({
         try {
           await bridgeWithProgress("deleteBranch", {
             branchName: selectedBranch,
-            isRemote: false,
+            isRemote: isSelectedBranchRemote,
             force: true,
           });
         } catch (err2) {
@@ -78,7 +81,7 @@ export function BranchSidebar({
         }
       }
     }
-  }, [selectedBranch]);
+  }, [selectedBranch, isSelectedBranchRemote]);
 
   const handleCompareWithCurrent = useCallback(() => {
     if (selectedBranch) {

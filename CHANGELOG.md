@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## [0.5.2] - 2026-09-11
+
+### 修复
+- **侧边栏工具栏删除远程分支时跑成了本地分支删除**：该按钮把 `isRemote` 写死成了 `false`，删 `origin/xxx` 时执行的是 `git branch -d origin/xxx`（报 `branch 'origin/xxx' not found. Did you forget --remote?`），而不是 `git push origin --delete xxx`。现在改为根据分支列表判断选中分支是本地还是远程（分支右键菜单的删除一直是对的，只有工具栏这个入口有问题）
+
 ## [0.5.1] - 2026-09-11
 
 ### 修复
