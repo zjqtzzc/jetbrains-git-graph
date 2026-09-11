@@ -1346,23 +1346,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  messageRouter.handle("copyShelfPatchToClipboard", async (params) => {
-    if (!gitService || !workspaceRoot) return NOT_GIT_REPO;
-    const shelfName = params.shelfName as string;
-    const patchFile = `${workspaceRoot}/.idea/shelf/${shelfName}/shelved.patch`;
-
-    try {
-      const patchContent = await nodefs.readFile(patchFile, "utf-8");
-      await vscode.env.clipboard.writeText(patchContent);
-      void vscode.window.showInformationMessage("Patch copied to clipboard");
-      return { success: true };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`Failed to copy patch: ${msg}`);
-      return { success: false };
-    }
-  });
-
   messageRouter.handle("importPatches", async () => {
     if (!gitService || !workspaceRoot) return NOT_GIT_REPO;
 
@@ -1393,47 +1376,6 @@ export function activate(context: vscode.ExtensionContext) {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       void vscode.window.showErrorMessage(`Failed to import patches: ${msg}`);
-      return { success: false };
-    }
-  });
-
-  messageRouter.handle("importPatchFromClipboard", async () => {
-    if (!gitService || !workspaceRoot) return NOT_GIT_REPO;
-
-    try {
-      const clipboardContent = await vscode.env.clipboard.readText();
-      if (!clipboardContent || !clipboardContent.trim()) {
-        void vscode.window.showWarningMessage(
-          "Clipboard is empty or does not contain patch content.",
-        );
-        return { success: false };
-      }
-
-      // Validate it looks like a patch
-      if (
-        !clipboardContent.includes("diff ") &&
-        !clipboardContent.includes("---") &&
-        !clipboardContent.includes("@@")
-      ) {
-        void vscode.window.showWarningMessage(
-          "Clipboard content does not appear to be a valid patch.",
-        );
-        return { success: false };
-      }
-
-      const shelfName = `Clipboard patch ${new Date().toLocaleString()}`;
-      await gitService.importPatchAsShelf(shelfName, clipboardContent);
-
-      messageRouter.broadcastEvent("commitStateChanged", {});
-      void vscode.window.showInformationMessage(
-        "Imported patch from clipboard as shelf entry.",
-      );
-      return { success: true };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(
-        `Failed to import patch from clipboard: ${msg}`,
-      );
       return { success: false };
     }
   });

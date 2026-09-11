@@ -5,6 +5,7 @@
 		"lib": [
 			"ES2022"
 		],
+		"types": ["node"],
 		"sourceMap": true,
 		"rootDir": ".",
 		"strict": true,   /* enable all strict type-checking options */
