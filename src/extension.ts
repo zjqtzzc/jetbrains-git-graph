@@ -1447,21 +1447,6 @@ export function activate(context: vscode.ExtensionContext) {
     return { success: true };
   });
 
-  messageRouter.handle("toggleBranchGroupByDirectory", async () => {
-    // This is a UI-only toggle, handled in webview state
-    return { success: true };
-  });
-
-  messageRouter.handle("setSingleClickAction", async () => {
-    // UI preference, handled in webview state
-    return { success: true };
-  });
-
-  messageRouter.handle("toggleShowTags", async () => {
-    // UI preference, handled in webview state
-    return { success: true };
-  });
-
   // 7. GitWatcher (only if GitService is available)
   if (gitService && workspaceRoot) {
     const watcher = new GitWatcher(

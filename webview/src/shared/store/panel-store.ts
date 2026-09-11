@@ -207,9 +207,10 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
   lastSelectedBranch: null,
   branchGroupByDirectory: (() => {
     try {
-      return localStorage.getItem("branchGroupByDirectory") === "true";
+      const stored = localStorage.getItem("branchGroupByDirectory");
+      return stored === null ? true : stored === "true";
     } catch {
-      return false;
+      return true;
     }
   })(),
 

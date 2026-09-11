@@ -339,9 +339,13 @@ export function BranchTree({
     >
       <BranchSidebarComponent
         onTogglePanel={onTogglePanel}
-        onNewBranch={() =>
-          setCreateBranchDialog({ startPoint: "HEAD", defaultName: "" })
-        }
+        onNewBranch={(branchName) => {
+          const selected = branches.find((b) => b.name === branchName);
+          const defaultName = selected?.isRemote
+            ? branchName.substring(branchName.indexOf("/") + 1)
+            : branchName;
+          setCreateBranchDialog({ startPoint: branchName, defaultName });
+        }}
       />
       <div
         ref={containerRef}

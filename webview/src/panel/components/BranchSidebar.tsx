@@ -8,7 +8,6 @@ import {
   DiffIcon,
   ExpandAllIcon,
   FetchIcon,
-  ListFilesIcon,
   LocateIcon,
   SearchIcon,
   SettingsIcon,
@@ -24,23 +23,16 @@ export function BranchSidebar({
   onNewBranch,
 }: {
   onTogglePanel?: () => void;
-  onNewBranch?: () => void;
+  onNewBranch?: (branchName: string) => void;
 } = {}) {
   const selectedBranches = usePanelStore((s) => s.selectedBranches);
   const selectedBranch =
     selectedBranches.length === 1 ? selectedBranches[0] : null;
-  const branchGroupByDirectory = usePanelStore((s) => s.branchGroupByDirectory);
-  const toggleBranchGroupByDirectory = usePanelStore(
-    (s) => s.toggleBranchGroupByDirectory,
-  );
 
   const handleNewBranch = useCallback(() => {
-    if (onNewBranch) {
-      onNewBranch();
-    } else {
-      bridge.request("createBranchPrompt", {});
-    }
-  }, [onNewBranch]);
+    if (!selectedBranch) return;
+    onNewBranch?.(selectedBranch);
+  }, [onNewBranch, selectedBranch]);
 
   const handleUpdateSelected = useCallback(async () => {
     if (!selectedBranch) return;
@@ -140,6 +132,7 @@ export function BranchSidebar({
           type="button"
           className="branch-sidebar-btn"
           onClick={handleNewBranch}
+          disabled={!selectedBranch}
         >
           <AddIcon />
         </button>
@@ -213,17 +206,6 @@ export function BranchSidebar({
         </button>
       </Tooltip>
       <SettingsButton />
-      <Tooltip
-        text={branchGroupByDirectory ? "Flatten List" : "Group By Directory"}
-      >
-        <button
-          type="button"
-          className={`branch-sidebar-btn${branchGroupByDirectory ? " active" : ""}`}
-          onClick={toggleBranchGroupByDirectory}
-        >
-          <ListFilesIcon />
-        </button>
-      </Tooltip>
 
       <div className="branch-sidebar-spacer" />
 
@@ -273,6 +255,11 @@ function SettingsButton() {
 }
 
 function SettingsMenu({ onClose }: { onClose: () => void }) {
+  const branchGroupByDirectory = usePanelStore((s) => s.branchGroupByDirectory);
+  const toggleBranchGroupByDirectory = usePanelStore(
+    (s) => s.toggleBranchGroupByDirectory,
+  );
+
   const menuRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (!node) return;
@@ -303,41 +290,43 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
         zIndex: 1000,
       }}
     >
-      <div className="commit-context-menu-header">On Single Click</div>
       <button
         type="button"
         className="commit-context-menu-item"
         onClick={() => {
-          bridge.request("setSingleClickAction", {
-            action: "updateBranchFilter",
-          });
+          toggleBranchGroupByDirectory();
           onClose();
         }}
       >
-        <span>Update Branch Filter</span>
+        <span>{branchGroupByDirectory ? "✓ " : ""}Group by Directory</span>
+      </button>
+      <div className="commit-context-menu-separator" />
+      <div className="commit-context-menu-header">On Single Click</div>
+      {/* 以下三项尚未实现（点击不会有任何效果），先禁用避免误导 */}
+      <button
+        type="button"
+        className="commit-context-menu-item"
+        disabled
+        style={{ opacity: 0.5, cursor: "default" }}
+      >
+        <span>Update Branch Filter (未实现)</span>
       </button>
       <button
         type="button"
         className="commit-context-menu-item"
-        onClick={() => {
-          bridge.request("setSingleClickAction", {
-            action: "navigateToHead",
-          });
-          onClose();
-        }}
+        disabled
+        style={{ opacity: 0.5, cursor: "default" }}
       >
-        <span>Navigate Log to Branch Head</span>
+        <span>Navigate Log to Branch Head (未实现)</span>
       </button>
       <div className="commit-context-menu-separator" />
       <button
         type="button"
         className="commit-context-menu-item"
-        onClick={() => {
-          bridge.request("toggleShowTags");
-          onClose();
-        }}
+        disabled
+        style={{ opacity: 0.5, cursor: "default" }}
       >
-        <span>✓ Show Tags</span>
+        <span>Show Tags (未实现)</span>
       </button>
     </div>
   );

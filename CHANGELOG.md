@@ -1,5 +1,11 @@
 # Changelog / 更新日志
 
+## [0.4.24] - 2026-09-11
+
+### 修复
+- **Git Log 面板侧边栏「New Branch」始终从当前分支新建，与右键菜单行为不一致**：改为和 Delete/Update Selected 一样，统一作用于树里选中的分支；未选中分支时按钮置灰
+- **Settings 菜单里的设置项点了没反应**：`On Single Click`（Update Branch Filter / Navigate Log to Branch Head）和 `Show Tags` 从写下来就没有真正接入任何逻辑（后端 handler 是空函数，webview 也没有对应 state），现在改为禁用状态并标注"未实现"，避免误导；同时把真正生效的「Group by Directory」从独立按钮移入 Settings 菜单，默认开启
+
 ## [0.4.23] - 2026-09-11
 
 ### 修复
